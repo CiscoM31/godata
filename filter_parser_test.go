@@ -657,6 +657,30 @@ func BenchmarkFilterTokenizer(b *testing.B) {
 	}
 }
 
+
+func TestFilterTokenizerExists(t *testing.T) {
+
+	tokenizer := FilterTokenizer()
+	input := "exists(Name,false)"
+	expect := []*Token{
+		&Token{Value: "exists", Type: FilterTokenFunc},
+		&Token{Value: "(", Type: FilterTokenOpenParen},
+		&Token{Value: "Name", Type: FilterTokenLiteral},
+		&Token{Value: ",", Type: FilterTokenComma},
+		&Token{Value: "false", Type: FilterTokenBoolean},
+		&Token{Value: ")", Type: FilterTokenCloseParen},
+	}
+	output, err := tokenizer.Tokenize(input)
+	if err != nil {
+		t.Error(err)
+	}
+
+	result, err := CompareTokens(expect, output)
+	if !result {
+		t.Error(err)
+	}
+}
+
 // Check if two slices of tokens are the same.
 func CompareTokens(a, b []*Token) (bool, error) {
 	if len(a) != len(b) {
