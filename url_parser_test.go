@@ -229,9 +229,10 @@ func TestUrlParserStrictValidation(t *testing.T) {
 
 }
 
-// TestUnescapeStringTokens tests string encoding rules specified in the ODATA ABNF:
+// TestUrlTokenization tests URL parsing
+// String encoding rules specified in the ODATA ABNF:
 // http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html#sec_URLSyntax
-func TestUnescapeStringTokens(t *testing.T) {
+func TestUrlTokenization(t *testing.T) {
 
 	testCases := []struct {
 		url string // The test URL
@@ -312,6 +313,15 @@ func TestUnescapeStringTokens(t *testing.T) {
 		{
 			// Strings with percent encoding
 			url:      "/Books?$filter=Description eq '%34%35%36'",
+			errRegex: nil,
+			expectedTree: []expectedParseNode{
+				{"eq", 0},
+				{"Description", 1},
+				{"'456'", 1},
+			},
+		},
+		{
+			url:      "/Books?$filter=Description eq 'abc'&$order=Title",
 			errRegex: nil,
 			expectedTree: []expectedParseNode{
 				{"eq", 0},
