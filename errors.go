@@ -9,6 +9,9 @@ type GoDataError struct {
 }
 
 func (err *GoDataError) Error() string {
+	if err.Cause != nil {
+		return fmt.Sprintf("%s. Cause: %s", err.Message, err.Cause.Error())
+	}
 	return err.Message
 }
 

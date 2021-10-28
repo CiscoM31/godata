@@ -10,29 +10,61 @@ const (
 )
 
 type OrderByItem struct {
-	Field *Token
-	Order string
+	Field *Token            // The raw value of the orderby field or expression.
+	Tree  *GoDataExpression // The orderby expression parsed as a tree.
+	Order string            // Ascending or descending order.
 }
 
 func ParseOrderByString(orderby string) (*GoDataOrderByQuery, error) {
+	return GlobalExpressionParser.ParseOrderByString(orderby)
+}
+
+// The value of the $orderby System Query option contains a comma-separated
+// list of expressions whose primitive result values are used to sort the items.
+// The service MUST order by the specified property in ascending order.
+// 4.01 services MUST support case-insensitive values for asc and desc.
+func (p *ExpressionParser) ParseOrderByString(orderby string) (*GoDataOrderByQuery, error) {
 	items := strings.Split(orderby, ",")
 
 	result := make([]*OrderByItem, 0)
 
 	for _, v := range items {
-		parts := strings.Split(v, " ")
-		field := &Token{Value: parts[0]}
+		v = strings.TrimSpace(v)
 		var order string = ASC
-		if len(parts) > 1 {
-			if strings.ToLower(parts[1]) == ASC {
+		if i := strings.LastIndex(v, " "); i > 0 {
+			o := strings.ToLower(v[i+1:])
+			if o == ASC {
 				order = ASC
-			} else if strings.ToLower(parts[1]) == DESC {
+			} else if o == DESC {
 				order = DESC
 			} else {
-				return nil, BadRequestError("Could not parse orderby query.")
+				return nil, BadRequestError("Invalid sort directive. Must be 'asc' or 'desc'")
 			}
+			v = strings.TrimSpace(v[:i])
 		}
-		result = append(result, &OrderByItem{field, order})
+		if tree, err := p.ParseExpressionString(v); err != nil {
+			switch e := err.(type) {
+			case *GoDataError:
+				return nil, &GoDataError{
+					ResponseCode: e.ResponseCode,
+					Message:      "Invalid $orderby query option",
+					Cause:        e,
+				}
+			default:
+				return nil, &GoDataError{
+					ResponseCode: 500,
+					Message:      "Invalid $orderby query option",
+					Cause:        e,
+				}
+			}
+		} else {
+			result = append(result, &OrderByItem{
+				Field: &Token{Value: unescapeUtfEncoding(v)},
+				Tree:  tree,
+				Order: order,
+			})
+
+		}
 	}
 
 	return &GoDataOrderByQuery{result, orderby}, nil

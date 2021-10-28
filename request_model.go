@@ -80,6 +80,14 @@ type GoDataQuery struct {
 	Format      *GoDataFormatQuery
 }
 
+// GoDataExpression encapsulates the tree representation of an expression
+// as defined in the OData ABNF grammar.
+type GoDataExpression struct {
+	Tree *ParseNode
+	// The raw string representing an expression
+	RawValue string
+}
+
 // Stores a parsed version of the filter query string. Can be used by
 // providers to apply the filter based on their own implementation. The filter
 // is stored as a parse tree that can be traversed.

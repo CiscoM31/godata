@@ -4,8 +4,14 @@ import (
 	"strconv"
 )
 
+type ExpandTokenType int
+
+func (e ExpandTokenType) Value() int {
+	return (int)(e)
+}
+
 const (
-	ExpandTokenOpenParen = iota
+	ExpandTokenOpenParen ExpandTokenType = iota
 	ExpandTokenCloseParen
 	ExpandTokenNav
 	ExpandTokenComma

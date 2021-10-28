@@ -7,17 +7,17 @@ import (
 )
 
 func TestFilterDateTime(t *testing.T) {
-	tokenizer := FilterTokenizer()
-	tokens := map[string]int{
-		"2011-08-29T21:58Z":             FilterTokenDateTime,
-		"2011-08-29T21:58:33Z":          FilterTokenDateTime,
-		"2011-08-29T21:58:33.123Z":      FilterTokenDateTime,
-		"2011-08-29T21:58+11:23":        FilterTokenDateTime,
-		"2011-08-29T21:58:33+11:23":     FilterTokenDateTime,
-		"2011-08-29T21:58:33.123+11:23": FilterTokenDateTime,
-		"2011-08-29T21:58:33-11:23":     FilterTokenDateTime,
-		"2011-08-29":                    FilterTokenDate,
-		"21:58:33":                      FilterTokenTime,
+	tokenizer := NewExpressionTokenizer()
+	tokens := map[string]TokenType{
+		"2011-08-29T21:58Z":             ExpressionTokenDateTime,
+		"2011-08-29T21:58:33Z":          ExpressionTokenDateTime,
+		"2011-08-29T21:58:33.123Z":      ExpressionTokenDateTime,
+		"2011-08-29T21:58+11:23":        ExpressionTokenDateTime,
+		"2011-08-29T21:58:33+11:23":     ExpressionTokenDateTime,
+		"2011-08-29T21:58:33.123+11:23": ExpressionTokenDateTime,
+		"2011-08-29T21:58:33-11:23":     ExpressionTokenDateTime,
+		"2011-08-29":                    ExpressionTokenDate,
+		"21:58:33":                      ExpressionTokenTime,
 	}
 	for tokenValue, tokenType := range tokens {
 		// Previously, the unit test had no space character after 'gt'
@@ -29,8 +29,8 @@ func TestFilterDateTime(t *testing.T) {
 		// See http://docs.oasis-open.org/odata/odata/v4.01/csprd03/abnf/odata-abnf-construction-rules.txt
 		input := "CreateTime gt " + tokenValue
 		expect := []*Token{
-			{Value: "CreateTime", Type: FilterTokenLiteral},
-			{Value: "gt", Type: FilterTokenLogical},
+			{Value: "CreateTime", Type: ExpressionTokenLiteral},
+			{Value: "gt", Type: ExpressionTokenLogical},
 			{Value: tokenValue, Type: tokenType},
 		}
 		output, err := tokenizer.Tokenize(input)
@@ -44,34 +44,33 @@ func TestFilterDateTime(t *testing.T) {
 			for _, t := range output {
 				a = append(a, t.Value)
 			}
-
 			t.Errorf("Unexpected tokens for input '%s'. Tokens: %s Error: %v", input, strings.Join(a, ", "), err)
 		}
 	}
 }
 
 func TestFilterAnyArrayOfObjects(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "Tags/any(d:d/Key eq 'Site' and d/Value lt 10)"
 	expect := []*Token{
-		{Value: "Tags", Type: FilterTokenLiteral},
-		{Value: "/", Type: FilterTokenOp},
-		{Value: "any", Type: FilterTokenLambda},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "d", Type: FilterTokenLiteral},
-		{Value: ",", Type: FilterTokenColon}, // ':' is replaced by ',' which is the function argument separator.
-		{Value: "d", Type: FilterTokenLiteral},
-		{Value: "/", Type: FilterTokenNav},
-		{Value: "Key", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "'Site'", Type: FilterTokenString},
-		{Value: "and", Type: FilterTokenLogical},
-		{Value: "d", Type: FilterTokenLiteral},
-		{Value: "/", Type: FilterTokenNav},
-		{Value: "Value", Type: FilterTokenLiteral},
-		{Value: "lt", Type: FilterTokenLogical},
-		{Value: "10", Type: FilterTokenInteger},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "Tags", Type: ExpressionTokenLiteral},
+		{Value: "/", Type: ExpressionTokenLambdaNav},
+		{Value: "any", Type: ExpressionTokenLambda},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "d", Type: ExpressionTokenLiteral},
+		{Value: ",", Type: ExpressionTokenColon}, // ':' is replaced by ',' which is the function argument separator.
+		{Value: "d", Type: ExpressionTokenLiteral},
+		{Value: "/", Type: ExpressionTokenNav},
+		{Value: "Key", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "'Site'", Type: ExpressionTokenString},
+		{Value: "and", Type: ExpressionTokenLogical},
+		{Value: "d", Type: ExpressionTokenLiteral},
+		{Value: "/", Type: ExpressionTokenNav},
+		{Value: "Value", Type: ExpressionTokenLiteral},
+		{Value: "lt", Type: ExpressionTokenLogical},
+		{Value: "10", Type: ExpressionTokenInteger},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -85,20 +84,20 @@ func TestFilterAnyArrayOfObjects(t *testing.T) {
 }
 
 func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "Tags/any(d:d eq 'Site')"
 	{
 		expect := []*Token{
-			{Value: "Tags", Type: FilterTokenLiteral},
-			{Value: "/", Type: FilterTokenOp},
-			{Value: "any", Type: FilterTokenLambda},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "d", Type: FilterTokenLiteral},
-			{Value: ",", Type: FilterTokenColon},
-			{Value: "d", Type: FilterTokenLiteral},
-			{Value: "eq", Type: FilterTokenLogical},
-			{Value: "'Site'", Type: FilterTokenString},
-			{Value: ")", Type: FilterTokenCloseParen},
+			{Value: "Tags", Type: ExpressionTokenLiteral},
+			{Value: "/", Type: ExpressionTokenLambdaNav},
+			{Value: "any", Type: ExpressionTokenLambda},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "d", Type: ExpressionTokenLiteral},
+			{Value: ",", Type: ExpressionTokenColon},
+			{Value: "d", Type: ExpressionTokenLiteral},
+			{Value: "eq", Type: ExpressionTokenLogical},
+			{Value: "'Site'", Type: ExpressionTokenString},
+			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -112,23 +111,22 @@ func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
 	}
 	q, err := ParseFilterString(input)
 	if err != nil {
-		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
-		{"d", 2},
-		{"eq", 2},
-		{"d", 3},
-		{"'Site'", 3},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Tags", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "d", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "eq", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "d", Depth: 3, Type: ExpressionTokenLiteral},
+		{Value: "'Site'", Depth: 3, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 }
 
@@ -148,9 +146,9 @@ func TestFilterGeographyPolygon(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"geo.intersects", 0},
-		{"location", 1},
-		{"geography'SRID=0;Polygon(-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581)'", 1},
+		{Value:"geo.intersects", Depth:0, Type: 0},
+		{Value:"location", Depth:1, Type: 0},
+		{Value:"geography'SRID=0;Polygon(-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581)'", Depth:1, Type: 0},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
@@ -171,39 +169,39 @@ func TestFilterAnyGeography(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
-		{"d", 2},
-		{"or", 2},
-		{"or", 3},
-		{"or", 4},
-		{"eq", 5},
-		{"d", 6},
-		{"'Site'", 6},
-		{"eq", 5},
-		{"'Environment'", 6},
-		{"/", 6},
-		{"d", 7},
-		{"Key", 7},
-		{"eq", 4},
-		{"/", 5},
-		{"/", 6},
-		{"d", 7},
-		{"d", 7},
-		{"d", 6},
-		{"123456", 5},
-		{"eq", 3},
-		{"concat", 4},
-		{"/", 5},
-		{"d", 6},
-		{"FirstName", 6},
-		{"/", 5},
-		{"d", 6},
-		{"LastName", 6},
-		{"/", 4},
-		{"$it", 5},
-		{"FullName", 5},
+		{Value:"/", Depth:0, Type: 0},
+		{Value:"Tags", Depth:1, Type: 0},
+		{Value:"any", Depth:1, Type: 0},
+		{Value:"d", Depth:2, Type: 0},
+		{Value:"or", Depth:2, Type: 0},
+		{Value:"or", Depth:3, Type: 0},
+		{Value:"or", Depth:4, Type: 0},
+		{Value:"eq", Depth:5, Type: 0},
+		{Value:"d", Depth:6, Type: 0},
+		{Value:"'Site'", Depth:6, Type: 0},
+		{Value:"eq", Depth:5, Type: 0},
+		{Value:"'Environment'", Depth:6, Type: 0},
+		{Value:"/", Depth:6, Type: 0},
+		{Value:"d", Depth:7, Type: 0},
+		{Value:"Key", Depth:7, Type: 0},
+		{Value:"eq", Depth:4, Type: 0},
+		{Value:"/", Depth:5, Type: 0},
+		{Value:"/", Depth:6, Type: 0},
+		{Value:"d", Depth:7, Type: 0},
+		{Value:"d", Depth:7, Type: 0},
+		{Value:"d", Depth:6, Type: 0},
+		{Value:"123456", Depth:5, Type: 0},
+		{Value:"eq", Depth:3, Type: 0},
+		{Value:"concat", Depth:4, Type: 0},
+		{Value:"/", Depth:5, Type: 0},
+		{Value:"d", Depth:6, Type: 0},
+		{Value:"FirstName", Depth:6, Type: 0},
+		{Value:"/", Depth:5, Type: 0},
+		{Value:"d", Depth:6, Type: 0},
+		{Value:"LastName", Depth:6, Type: 0},
+		{Value:"/", Depth:4, Type: 0},
+		{Value:"$it", Depth:5, Type: 0},
+		{Value:"FullName", Depth:5, Type: 0},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
@@ -235,60 +233,59 @@ func TestFilterAnyMixedQuery(t *testing.T) {
 	input := "Tags/any(d:d eq 'Site' or 'Environment' eq d/Key or d/d/d eq 123456 or concat(d/FirstName, d/LastName) eq $it/FullName)"
 	q, err := ParseFilterString(input)
 	if err != nil {
-		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
-		{"d", 2},
-		{"or", 2},
-		{"or", 3},
-		{"or", 4},
-		{"eq", 5},
-		{"d", 6},
-		{"'Site'", 6},
-		{"eq", 5},
-		{"'Environment'", 6},
-		{"/", 6},
-		{"d", 7},
-		{"Key", 7},
-		{"eq", 4},
-		{"/", 5},
-		{"/", 6},
-		{"d", 7},
-		{"d", 7},
-		{"d", 6},
-		{"123456", 5},
-		{"eq", 3},
-		{"concat", 4},
-		{"/", 5},
-		{"d", 6},
-		{"FirstName", 6},
-		{"/", 5},
-		{"d", 6},
-		{"LastName", 6},
-		{"/", 4},
-		{"$it", 5},
-		{"FullName", 5},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Tags", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "d", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "or", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "or", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "or", Depth: 4, Type: ExpressionTokenLogical},
+		{Value: "eq", Depth: 5, Type: ExpressionTokenLogical},
+		{Value: "d", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "'Site'", Depth: 6, Type: ExpressionTokenString},
+		{Value: "eq", Depth: 5, Type: ExpressionTokenLogical},
+		{Value: "'Environment'", Depth: 6, Type: ExpressionTokenString},
+		{Value: "/", Depth: 6, Type: ExpressionTokenNav},
+		{Value: "d", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "Key", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "eq", Depth: 4, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 5, Type: ExpressionTokenNav},
+		{Value: "/", Depth: 6, Type: ExpressionTokenNav},
+		{Value: "d", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "d", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "d", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "123456", Depth: 5, Type: ExpressionTokenInteger},
+		{Value: "eq", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "concat", Depth: 4, Type: ExpressionTokenFunc},
+		{Value: "/", Depth: 5, Type: ExpressionTokenNav},
+		{Value: "d", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "FirstName", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "/", Depth: 5, Type: ExpressionTokenNav},
+		{Value: "d", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "LastName", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "/", Depth: 4, Type: ExpressionTokenNav},
+		{Value: "$it", Depth: 5, Type: ExpressionTokenIt},
+		{Value: "FullName", Depth: 5, Type: ExpressionTokenLiteral},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 }
 
 func TestFilterGuid(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "GuidValue eq 01234567-89ab-cdef-0123-456789abcdef"
 
 	expect := []*Token{
-		{Value: "GuidValue", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "01234567-89ab-cdef-0123-456789abcdef", Type: FilterTokenGuid},
+		{Value: "GuidValue", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "01234567-89ab-cdef-0123-456789abcdef", Type: ExpressionTokenGuid},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -301,14 +298,14 @@ func TestFilterGuid(t *testing.T) {
 }
 
 func TestFilterDurationWithType(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "Task eq duration'P12DT23H59M59.999999999999S'"
 
 	expect := []*Token{
-		{Value: "Task", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
+		{Value: "Task", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
 		// Note the duration token is extracted.
-		{Value: "P12DT23H59M59.999999999999S", Type: FilterTokenDuration},
+		{Value: "P12DT23H59M59.999999999999S", Type: ExpressionTokenDuration},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -322,13 +319,13 @@ func TestFilterDurationWithType(t *testing.T) {
 }
 
 func TestFilterDurationWithoutType(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "Task eq 'P12DT23H59M59.999999999999S'"
 
 	expect := []*Token{
-		{Value: "Task", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "P12DT23H59M59.999999999999S", Type: FilterTokenDuration},
+		{Value: "Task", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "P12DT23H59M59.999999999999S", Type: ExpressionTokenDuration},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -342,15 +339,15 @@ func TestFilterDurationWithoutType(t *testing.T) {
 }
 
 func TestFilterAnyWithNoArgs(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "Tags/any()"
 	{
 		expect := []*Token{
-			{Value: "Tags", Type: FilterTokenLiteral},
-			{Value: "/", Type: FilterTokenOp},
-			{Value: "any", Type: FilterTokenLambda},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: ")", Type: FilterTokenCloseParen},
+			{Value: "Tags", Type: ExpressionTokenLiteral},
+			{Value: "/", Type: ExpressionTokenLambdaNav},
+			{Value: "any", Type: ExpressionTokenLambda},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -364,31 +361,30 @@ func TestFilterAnyWithNoArgs(t *testing.T) {
 	}
 	q, err := ParseFilterString(input)
 	if err != nil {
-		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Tags", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 }
 func TestFilterDivby(t *testing.T) {
 	{
-		tokenizer := FilterTokenizer()
+		tokenizer := NewExpressionTokenizer()
 		input := "Price div 2 gt 3.5"
 		expect := []*Token{
-			{Value: "Price", Type: FilterTokenLiteral},
-			{Value: "div", Type: FilterTokenOp},
-			{Value: "2", Type: FilterTokenInteger},
-			{Value: "gt", Type: FilterTokenLogical},
-			{Value: "3.5", Type: FilterTokenFloat},
+			{Value: "Price", Type: ExpressionTokenLiteral},
+			{Value: "div", Type: ExpressionTokenOp},
+			{Value: "2", Type: ExpressionTokenInteger},
+			{Value: "gt", Type: ExpressionTokenLogical},
+			{Value: "3.5", Type: ExpressionTokenFloat},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -401,14 +397,14 @@ func TestFilterDivby(t *testing.T) {
 		}
 	}
 	{
-		tokenizer := FilterTokenizer()
+		tokenizer := NewExpressionTokenizer()
 		input := "Price divby 2 gt 3.5"
 		expect := []*Token{
-			{Value: "Price", Type: FilterTokenLiteral},
-			{Value: "divby", Type: FilterTokenOp},
-			{Value: "2", Type: FilterTokenInteger},
-			{Value: "gt", Type: FilterTokenLogical},
-			{Value: "3.5", Type: FilterTokenFloat},
+			{Value: "Price", Type: ExpressionTokenLiteral},
+			{Value: "divby", Type: ExpressionTokenOp},
+			{Value: "2", Type: ExpressionTokenInteger},
+			{Value: "gt", Type: ExpressionTokenLogical},
+			{Value: "3.5", Type: ExpressionTokenFloat},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -423,12 +419,12 @@ func TestFilterDivby(t *testing.T) {
 }
 
 func TestFilterNotBooleanProperty(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "not Enabled"
 	{
 		expect := []*Token{
-			{Value: "not", Type: FilterTokenLogical},
-			{Value: "Enabled", Type: FilterTokenLiteral},
+			{Value: "not", Type: ExpressionTokenLogical},
+			{Value: "Enabled", Type: ExpressionTokenLiteral},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -441,29 +437,28 @@ func TestFilterNotBooleanProperty(t *testing.T) {
 	}
 	q, err := ParseFilterString(input)
 	if err != nil {
-		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"not", 0},
-		{"Enabled", 1},
+		{Value: "not", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "Enabled", Depth: 1, Type: ExpressionTokenLiteral},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 
 }
 
 func TestFilterEmptyStringToken(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "City eq ''"
 	expect := []*Token{
-		{Value: "City", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "''", Type: FilterTokenString},
+		{Value: "City", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "''", Type: ExpressionTokenString},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -478,16 +473,16 @@ func TestFilterEmptyStringToken(t *testing.T) {
 // Note: according to ODATA ABNF notation, there must be a space between not and open parenthesis.
 // http://docs.oasis-open.org/odata/odata/v4.01/csprd03/abnf/odata-abnf-construction-rules.txt
 func TestFilterNotWithNoSpace(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "not(City eq 'Seattle')"
 	{
 		expect := []*Token{
-			{Value: "not", Type: FilterTokenLogical},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "City", Type: FilterTokenLiteral},
-			{Value: "eq", Type: FilterTokenLogical},
-			{Value: "'Seattle'", Type: FilterTokenString},
-			{Value: ")", Type: FilterTokenCloseParen},
+			{Value: "not", Type: ExpressionTokenLogical},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "City", Type: ExpressionTokenLiteral},
+			{Value: "eq", Type: ExpressionTokenLogical},
+			{Value: "'Seattle'", Type: ExpressionTokenString},
+			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -501,38 +496,37 @@ func TestFilterNotWithNoSpace(t *testing.T) {
 
 	q, err := ParseFilterString(input)
 	if err != nil {
-		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"not", 0},
-		{"eq", 1},
-		{"City", 2},
-		{"'Seattle'", 2},
+		{Value: "not", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "eq", Depth: 1, Type: ExpressionTokenLogical},
+		{Value: "City", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "'Seattle'", Depth: 2, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 }
 
 // TestFilterInOperator tests the "IN" operator with a comma-separated list of values.
 func TestFilterInOperator(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "City in ( 'Seattle', 'Atlanta', 'Paris' )"
 
 	expect := []*Token{
-		{Value: "City", Type: FilterTokenLiteral},
-		{Value: "in", Type: FilterTokenLogical},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "'Seattle'", Type: FilterTokenString},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'Atlanta'", Type: FilterTokenString},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'Paris'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "City", Type: ExpressionTokenLiteral},
+		{Value: "in", Type: ExpressionTokenLogical},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "'Seattle'", Type: ExpressionTokenString},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'Atlanta'", Type: ExpressionTokenString},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'Paris'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	tokens, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -548,13 +542,13 @@ func TestFilterInOperator(t *testing.T) {
 		t.Error(err)
 	}
 	expect = []*Token{
-		{Value: "City", Type: FilterTokenLiteral},
-		{Value: "'Seattle'", Type: FilterTokenString},
-		{Value: "'Atlanta'", Type: FilterTokenString},
-		{Value: "'Paris'", Type: FilterTokenString},
+		{Value: "City", Type: ExpressionTokenLiteral},
+		{Value: "'Seattle'", Type: ExpressionTokenString},
+		{Value: "'Atlanta'", Type: ExpressionTokenString},
+		{Value: "'Paris'", Type: ExpressionTokenString},
 		{Value: "3", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
-		{Value: "in", Type: FilterTokenLogical},
+		{Value: "in", Type: ExpressionTokenLogical},
 	}
 	result, err = CompareQueue(expect, postfix)
 	if !result {
@@ -567,32 +561,31 @@ func TestFilterInOperator(t *testing.T) {
 	}
 
 	var treeExpect []expectedParseNode = []expectedParseNode{
-		{"in", 0},
-		{"City", 1},
-		{TokenListExpr, 1},
-		{"'Seattle'", 2},
-		{"'Atlanta'", 2},
-		{"'Paris'", 2},
+		{Value: "in", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "City", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: TokenListExpr, Depth: 1, Type: TokenTypeListExpr},
+		{Value: "'Seattle'", Depth: 2, Type: ExpressionTokenString},
+		{Value: "'Atlanta'", Depth: 2, Type: ExpressionTokenString},
+		{Value: "'Paris'", Depth: 2, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, treeExpect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
 // TestFilterInOperatorSingleValue tests the "IN" operator with a list containing a single value.
 func TestFilterInOperatorSingleValue(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "City in ( 'Seattle' )"
 
 	expect := []*Token{
-		{Value: "City", Type: FilterTokenLiteral},
-		{Value: "in", Type: FilterTokenLogical},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "'Seattle'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "City", Type: ExpressionTokenLiteral},
+		{Value: "in", Type: ExpressionTokenLogical},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "'Seattle'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	tokens, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -608,11 +601,11 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 		t.Error(err)
 	}
 	expect = []*Token{
-		{Value: "City", Type: FilterTokenLiteral},
-		{Value: "'Seattle'", Type: FilterTokenString},
+		{Value: "City", Type: ExpressionTokenLiteral},
+		{Value: "'Seattle'", Type: ExpressionTokenString},
 		{Value: "1", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
-		{Value: "in", Type: FilterTokenLogical},
+		{Value: "in", Type: ExpressionTokenLogical},
 	}
 	result, err = CompareQueue(expect, postfix)
 	if !result {
@@ -625,29 +618,28 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 	}
 
 	var treeExpect []expectedParseNode = []expectedParseNode{
-		{"in", 0},
-		{"City", 1},
-		{TokenListExpr, 1},
-		{"'Seattle'", 2},
+		{Value: "in", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "City", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: TokenListExpr, Depth: 1, Type: TokenTypeListExpr},
+		{Value: "'Seattle'", Depth: 2, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, treeExpect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
 // TestFilterInOperatorEmptyList tests the "IN" operator with a list containing no value.
 func TestFilterInOperatorEmptyList(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "City in ( )"
 
 	expect := []*Token{
-		{Value: "City", Type: FilterTokenLiteral},
-		{Value: "in", Type: FilterTokenLogical},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "City", Type: ExpressionTokenLiteral},
+		{Value: "in", Type: ExpressionTokenLogical},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	tokens, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -663,10 +655,10 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 		t.Error(err)
 	}
 	expect = []*Token{
-		{Value: "City", Type: FilterTokenLiteral},
+		{Value: "City", Type: ExpressionTokenLiteral},
 		{Value: "0", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
-		{Value: "in", Type: FilterTokenLogical},
+		{Value: "in", Type: ExpressionTokenLogical},
 	}
 	result, err = CompareQueue(expect, postfix)
 	if !result {
@@ -679,15 +671,14 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 	}
 
 	var treeExpect []expectedParseNode = []expectedParseNode{
-		{"in", 0},
-		{"City", 1},
-		{TokenListExpr, 1},
+		{Value: "in", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "City", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: TokenListExpr, Depth: 1, Type: TokenTypeListExpr},
 	}
 	pos := 0
 	err = CompareTree(tree, treeExpect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
@@ -696,38 +687,38 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 //   listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
 // Validate if a list is within another list.
 func TestFilterInOperatorBothSides(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "(1, 2) in ( ('ab', 'cd'), (1, 2), ('abc', 'def') )"
 
 	expect := []*Token{
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "1", Type: FilterTokenInteger},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "2", Type: FilterTokenInteger},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: "in", Type: FilterTokenLogical},
-		{Value: "(", Type: FilterTokenOpenParen},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "1", Type: ExpressionTokenInteger},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "2", Type: ExpressionTokenInteger},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: "in", Type: ExpressionTokenLogical},
+		{Value: "(", Type: ExpressionTokenOpenParen},
 
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "'ab'", Type: FilterTokenString},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'cd'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: ",", Type: FilterTokenComma},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "'ab'", Type: ExpressionTokenString},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'cd'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: ",", Type: ExpressionTokenComma},
 
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "1", Type: FilterTokenInteger},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "2", Type: FilterTokenInteger},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: ",", Type: FilterTokenComma},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "1", Type: ExpressionTokenInteger},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "2", Type: ExpressionTokenInteger},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: ",", Type: ExpressionTokenComma},
 
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "'abc'", Type: FilterTokenString},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'def'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "'abc'", Type: ExpressionTokenString},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'def'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	tokens, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -743,30 +734,30 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 		t.Error(err)
 	}
 	expect = []*Token{
-		{Value: "1", Type: FilterTokenInteger},
-		{Value: "2", Type: FilterTokenInteger},
+		{Value: "1", Type: ExpressionTokenInteger},
+		{Value: "2", Type: ExpressionTokenInteger},
 		{Value: "2", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
 
-		{Value: "'ab'", Type: FilterTokenString},
-		{Value: "'cd'", Type: FilterTokenString},
+		{Value: "'ab'", Type: ExpressionTokenString},
+		{Value: "'cd'", Type: ExpressionTokenString},
 		{Value: "2", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
 
-		{Value: "1", Type: FilterTokenInteger},
-		{Value: "2", Type: FilterTokenInteger},
+		{Value: "1", Type: ExpressionTokenInteger},
+		{Value: "2", Type: ExpressionTokenInteger},
 		{Value: "2", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
 
-		{Value: "'abc'", Type: FilterTokenString},
-		{Value: "'def'", Type: FilterTokenString},
+		{Value: "'abc'", Type: ExpressionTokenString},
+		{Value: "'def'", Type: ExpressionTokenString},
 		{Value: "2", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
 
 		{Value: "3", Type: TokenTypeArgCount},
 		{Value: TokenListExpr, Type: TokenTypeListExpr},
 
-		{Value: "in", Type: FilterTokenLogical},
+		{Value: "in", Type: ExpressionTokenLogical},
 	}
 	result, err = CompareQueue(expect, postfix)
 	if !result {
@@ -780,55 +771,54 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 	}
 
 	var treeExpect []expectedParseNode = []expectedParseNode{
-		{"in", 0},
-		{TokenListExpr, 1},
-		{"1", 2},
-		{"2", 2},
+		{Value: "in", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: TokenListExpr, Depth: 1, Type: TokenTypeListExpr},
+		{Value: "1", Depth: 2, Type: ExpressionTokenInteger},
+		{Value: "2", Depth: 2, Type: ExpressionTokenInteger},
 		//  ('ab', 'cd'), (1, 2), ('abc', 'def')
-		{TokenListExpr, 1},
-		{TokenListExpr, 2},
-		{"'ab'", 3},
-		{"'cd'", 3},
-		{TokenListExpr, 2},
-		{"1", 3},
-		{"2", 3},
-		{TokenListExpr, 2},
-		{"'abc'", 3},
-		{"'def'", 3},
+		{Value: TokenListExpr, Depth: 1, Type: TokenTypeListExpr},
+		{Value: TokenListExpr, Depth: 2, Type: TokenTypeListExpr},
+		{Value: "'ab'", Depth: 3, Type: ExpressionTokenString},
+		{Value: "'cd'", Depth: 3, Type: ExpressionTokenString},
+		{Value: TokenListExpr, Depth: 2, Type: TokenTypeListExpr},
+		{Value: "1", Depth: 3, Type: ExpressionTokenInteger},
+		{Value: "2", Depth: 3, Type: ExpressionTokenInteger},
+		{Value: TokenListExpr, Depth: 2, Type: TokenTypeListExpr},
+		{Value: "'abc'", Depth: 3, Type: ExpressionTokenString},
+		{Value: "'def'", Depth: 3, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, treeExpect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
 // TestFilterInOperatorWithFunc tests the "IN" operator with a comma-separated list
 // of values, one of which is a function call which itself has a comma-separated list of values.
 func TestFilterInOperatorWithFunc(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	// 'Atlanta' is enclosed in a unecessary parenExpr to validate the expression is properly unwrapped.
 	input := "City in ( 'Seattle', concat('San', 'Francisco'), ('Atlanta') )"
 
 	{
 		expect := []*Token{
-			{Value: "City", Type: FilterTokenLiteral},
-			{Value: "in", Type: FilterTokenLogical},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "'Seattle'", Type: FilterTokenString},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "concat", Type: FilterTokenFunc},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "'San'", Type: FilterTokenString},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "'Francisco'", Type: FilterTokenString},
-			{Value: ")", Type: FilterTokenCloseParen},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "'Atlanta'", Type: FilterTokenString},
-			{Value: ")", Type: FilterTokenCloseParen},
-			{Value: ")", Type: FilterTokenCloseParen},
+			{Value: "City", Type: ExpressionTokenLiteral},
+			{Value: "in", Type: ExpressionTokenLogical},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "'Seattle'", Type: ExpressionTokenString},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "concat", Type: ExpressionTokenFunc},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "'San'", Type: ExpressionTokenString},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "'Francisco'", Type: ExpressionTokenString},
+			{Value: ")", Type: ExpressionTokenCloseParen},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "'Atlanta'", Type: ExpressionTokenString},
+			{Value: ")", Type: ExpressionTokenCloseParen},
+			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -841,42 +831,41 @@ func TestFilterInOperatorWithFunc(t *testing.T) {
 	}
 	q, err := ParseFilterString(input)
 	if err != nil {
-		t.Errorf("Error parsing filter: %s", err.Error())
+		t.Fatalf("Error parsing filter: %v", err)
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"in", 0},
-		{"City", 1},
-		{TokenListExpr, 1},
-		{"'Seattle'", 2},
-		{"concat", 2},
-		{"'San'", 3},
-		{"'Francisco'", 3},
-		{"'Atlanta'", 2},
+		{Value: "in", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "City", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: TokenListExpr, Depth: 1, Type: TokenTypeListExpr},
+		{Value: "'Seattle'", Depth: 2, Type: ExpressionTokenString},
+		{Value: "concat", Depth: 2, Type: ExpressionTokenFunc},
+		{Value: "'San'", Depth: 3, Type: ExpressionTokenString},
+		{Value: "'Francisco'", Depth: 3, Type: ExpressionTokenString},
+		{Value: "'Atlanta'", Depth: 2, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		printTree(q.Tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 }
 
 func TestFilterNotInListExpr(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "not ( City in ( 'Seattle', 'Atlanta' ) )"
 
 	{
 		expect := []*Token{
-			{Value: "not", Type: FilterTokenLogical},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "City", Type: FilterTokenLiteral},
-			{Value: "in", Type: FilterTokenLogical},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "'Seattle'", Type: FilterTokenString},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "'Atlanta'", Type: FilterTokenString},
-			{Value: ")", Type: FilterTokenCloseParen},
-			{Value: ")", Type: FilterTokenCloseParen},
+			{Value: "not", Type: ExpressionTokenLogical},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "City", Type: ExpressionTokenLiteral},
+			{Value: "in", Type: ExpressionTokenLogical},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "'Seattle'", Type: ExpressionTokenString},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "'Atlanta'", Type: ExpressionTokenString},
+			{Value: ")", Type: ExpressionTokenCloseParen},
+			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
 		output, err := tokenizer.Tokenize(input)
 		if err != nil {
@@ -888,7 +877,7 @@ func TestFilterNotInListExpr(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalFilterTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 		if err != nil {
 			t.Error(err)
 			return
@@ -905,39 +894,38 @@ func TestFilterNotInListExpr(t *testing.T) {
 			return
 		}
 		var expect []expectedParseNode = []expectedParseNode{
-			{"not", 0},
-			{"in", 1},
-			{"City", 2},
-			{TokenListExpr, 2},
-			{"'Seattle'", 3},
-			{"'Atlanta'", 3},
+			{Value: "not", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "in", Depth: 1, Type: ExpressionTokenLogical},
+			{Value: "City", Depth: 2, Type: ExpressionTokenLiteral},
+			{Value: TokenListExpr, Depth: 2, Type: TokenTypeListExpr},
+			{Value: "'Seattle'", Depth: 3, Type: ExpressionTokenString},
+			{Value: "'Atlanta'", Depth: 3, Type: ExpressionTokenString},
 		}
 		pos := 0
 		err = CompareTree(tree, expect, &pos, 0)
 		if err != nil {
-			printTree(tree)
-			t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+			t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 		}
 
 	}
 }
 
 func TestFilterAll(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "Tags/all(d:d/Key eq 'Site')"
 	expect := []*Token{
-		{Value: "Tags", Type: FilterTokenLiteral},
-		{Value: "/", Type: FilterTokenOp},
-		{Value: "all", Type: FilterTokenLambda},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "d", Type: FilterTokenLiteral},
-		{Value: ",", Type: FilterTokenColon},
-		{Value: "d", Type: FilterTokenLiteral},
-		{Value: "/", Type: FilterTokenNav},
-		{Value: "Key", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "'Site'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "Tags", Type: ExpressionTokenLiteral},
+		{Value: "/", Type: ExpressionTokenLambdaNav},
+		{Value: "all", Type: ExpressionTokenLambda},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "d", Type: ExpressionTokenLiteral},
+		{Value: ",", Type: ExpressionTokenColon},
+		{Value: "d", Type: ExpressionTokenLiteral},
+		{Value: "/", Type: ExpressionTokenNav},
+		{Value: "Key", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "'Site'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -950,18 +938,18 @@ func TestFilterAll(t *testing.T) {
 	}
 }
 
-func TestFilterTokenizer(t *testing.T) {
+func TestExpressionTokenizer(t *testing.T) {
 
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "Name eq 'Milk' and Price lt 2.55"
 	expect := []*Token{
-		{Value: "Name", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "'Milk'", Type: FilterTokenString},
-		{Value: "and", Type: FilterTokenLogical},
-		{Value: "Price", Type: FilterTokenLiteral},
-		{Value: "lt", Type: FilterTokenLogical},
-		{Value: "2.55", Type: FilterTokenFloat},
+		{Value: "Name", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "'Milk'", Type: ExpressionTokenString},
+		{Value: "and", Type: ExpressionTokenLogical},
+		{Value: "Price", Type: ExpressionTokenLiteral},
+		{Value: "lt", Type: ExpressionTokenLogical},
+		{Value: "2.55", Type: ExpressionTokenFloat},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -974,28 +962,28 @@ func TestFilterTokenizer(t *testing.T) {
 	}
 }
 
-func TestFunction(t *testing.T) {
-	tokenizer := FilterTokenizer()
+func TestFilterFunction(t *testing.T) {
+	tokenizer := NewExpressionTokenizer()
 	// The syntax for ODATA functions follows the inline parameter syntax. The function name must be followed
 	// by an opening parenthesis, followed by a comma-separated list of parameters, followed by a closing parenthesis.
 	// For example:
 	// GET serviceRoot/Airports?$filter=contains(Location/Address, 'San Francisco')
 	input := "contains(LastName, 'Smith') and FirstName eq 'John' and City eq 'Houston'"
 	expect := []*Token{
-		{Value: "contains", Type: FilterTokenFunc},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "LastName", Type: FilterTokenLiteral},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'Smith'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: "and", Type: FilterTokenLogical},
-		{Value: "FirstName", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "'John'", Type: FilterTokenString},
-		{Value: "and", Type: FilterTokenLogical},
-		{Value: "City", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "'Houston'", Type: FilterTokenString},
+		{Value: "contains", Type: ExpressionTokenFunc},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "LastName", Type: ExpressionTokenLiteral},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'Smith'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: "and", Type: ExpressionTokenLogical},
+		{Value: "FirstName", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "'John'", Type: ExpressionTokenString},
+		{Value: "and", Type: ExpressionTokenLogical},
+		{Value: "City", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "'Houston'", Type: ExpressionTokenString},
 	}
 	{
 		output, err := tokenizer.Tokenize(input)
@@ -1008,7 +996,7 @@ func TestFunction(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalFilterTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1044,24 +1032,24 @@ func TestFunction(t *testing.T) {
 	}
 }
 
-func TestNestedFunction(t *testing.T) {
-	tokenizer := FilterTokenizer()
+func TestFilterNestedFunction(t *testing.T) {
+	tokenizer := NewExpressionTokenizer()
 	// Test ODATA syntax with nested function calls
 	input := "contains(LastName, toupper('Smith')) or FirstName eq 'John'"
 	expect := []*Token{
-		{Value: "contains", Type: FilterTokenFunc},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "LastName", Type: FilterTokenLiteral},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "toupper", Type: FilterTokenFunc},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "'Smith'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: "or", Type: FilterTokenLogical},
-		{Value: "FirstName", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "'John'", Type: FilterTokenString},
+		{Value: "contains", Type: ExpressionTokenFunc},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "LastName", Type: ExpressionTokenLiteral},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "toupper", Type: ExpressionTokenFunc},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "'Smith'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: "or", Type: ExpressionTokenLogical},
+		{Value: "FirstName", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "'John'", Type: ExpressionTokenString},
 	}
 	{
 		output, err := tokenizer.Tokenize(input)
@@ -1074,7 +1062,7 @@ func TestNestedFunction(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalFilterTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1155,7 +1143,7 @@ func TestValidFilterSyntax(t *testing.T) {
 		"minute(StartTime) eq 0",
 		"totaloffsetminutes(StartTime) eq 0",
 		"second(StartTime) eq 0",
-		"fractionalsecond(StartTime) lt 0.123456", // The fractionalseconds function returns the fractional seconds component of the
+		"fractionalseconds(StartTime) lt 0.123456", // The fractionalseconds function returns the fractional seconds component of the
 		// DateTimeOffset or TimeOfDay parameter value as a non-negative decimal value less than 1.
 		"date(StartTime) ne date(EndTime)",
 		"totaloffsetminutes(StartTime) eq 60",
@@ -1253,7 +1241,7 @@ func TestValidFilterSyntax(t *testing.T) {
 	for _, input := range queries {
 		q, err := ParseFilterString(input)
 		if err != nil {
-			t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+			t.Errorf("Error parsing query %s. Error: %v", input, err)
 			return
 		} else if q.Tree == nil {
 			t.Errorf("Error parsing query %s. Tree is nil", input)
@@ -1261,7 +1249,7 @@ func TestValidFilterSyntax(t *testing.T) {
 		if q.Tree.Token == nil {
 			t.Errorf("Error parsing query %s. Root token is nil", input)
 		}
-		if q.Tree.Token.Type == FilterTokenLiteral {
+		if q.Tree.Token.Type == ExpressionTokenLiteral {
 			t.Errorf("Error parsing query %s. Unexpected root token type: %+v", input, q.Tree.Token)
 		}
 		//printTree(q.Tree)
@@ -1290,9 +1278,10 @@ func TestInvalidFilterSyntax(t *testing.T) {
 		"add",                                  // Just a single arithmetic operator
 		"add ",                                 // Just a single arithmetic operator
 		"add 2",                                // Missing operands
-		"add 2 3",                              // Missing operands
 		"City",                                 // Just a single literal
+		"City City",                            // Sequence of two literals
 		"City City City City",                  // Sequence of literals
+		"eq eq",                                // Two consecutive operators
 		"City eq",                              // Missing operand
 		"City eq (",                            // Wrong operand
 		"City eq )",                            // Wrong operand
@@ -1325,8 +1314,7 @@ func TestInvalidFilterSyntax(t *testing.T) {
 		q, err := ParseFilterString(input)
 		if err == nil {
 			// The parser has incorrectly determined the syntax is valid.
-			printTree(q.Tree)
-			t.Errorf("The query '$filter=%s' is not valid ODATA syntax. The ODATA parser should return an error", input)
+			t.Errorf("The query '$filter=%s' is not valid ODATA syntax. The ODATA parser should return an error. Tree:\n%v", input, q.Tree)
 			return
 		}
 	}
@@ -1335,31 +1323,31 @@ func TestInvalidFilterSyntax(t *testing.T) {
 // See http://docs.oasis-open.org/odata/odata/v4.01/csprd02/part1-protocol/odata-v4.01-csprd02-part1-protocol.html#_Toc486263411
 // Test 'in', which is the 'Is a member of' operator.
 func TestFilterIn(t *testing.T) {
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "contains(LastName, 'Smith') and Site in ('London', 'Paris', 'San Francisco', 'Dallas') and FirstName eq 'John'"
 	expect := []*Token{
-		{Value: "contains", Type: FilterTokenFunc},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "LastName", Type: FilterTokenLiteral},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'Smith'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: "and", Type: FilterTokenLogical},
-		{Value: "Site", Type: FilterTokenLiteral},
-		{Value: "in", Type: FilterTokenLogical},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "'London'", Type: FilterTokenString},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'Paris'", Type: FilterTokenString},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'San Francisco'", Type: FilterTokenString},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'Dallas'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
-		{Value: "and", Type: FilterTokenLogical},
-		{Value: "FirstName", Type: FilterTokenLiteral},
-		{Value: "eq", Type: FilterTokenLogical},
-		{Value: "'John'", Type: FilterTokenString},
+		{Value: "contains", Type: ExpressionTokenFunc},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "LastName", Type: ExpressionTokenLiteral},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'Smith'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: "and", Type: ExpressionTokenLogical},
+		{Value: "Site", Type: ExpressionTokenLiteral},
+		{Value: "in", Type: ExpressionTokenLogical},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "'London'", Type: ExpressionTokenString},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'Paris'", Type: ExpressionTokenString},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'San Francisco'", Type: ExpressionTokenString},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'Dallas'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
+		{Value: "and", Type: ExpressionTokenLogical},
+		{Value: "FirstName", Type: ExpressionTokenLiteral},
+		{Value: "eq", Type: ExpressionTokenLogical},
+		{Value: "'John'", Type: ExpressionTokenString},
 	}
 	{
 		output, err := tokenizer.Tokenize(input)
@@ -1372,7 +1360,7 @@ func TestFilterIn(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalFilterTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1447,18 +1435,18 @@ func TestFilterIn(t *testing.T) {
 	}
 }
 
-func TestFilterTokenizerFunc(t *testing.T) {
+func TestExpressionTokenizerFunc(t *testing.T) {
 
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "not endswith(Name,'ilk')"
 	expect := []*Token{
-		{Value: "not", Type: FilterTokenLogical},
-		{Value: "endswith", Type: FilterTokenFunc},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "Name", Type: FilterTokenLiteral},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "'ilk'", Type: FilterTokenString},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "not", Type: ExpressionTokenLogical},
+		{Value: "endswith", Type: ExpressionTokenFunc},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "Name", Type: ExpressionTokenLiteral},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "'ilk'", Type: ExpressionTokenString},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -1472,7 +1460,7 @@ func TestFilterTokenizerFunc(t *testing.T) {
 }
 
 func BenchmarkFilterTokenizer(b *testing.B) {
-	t := FilterTokenizer()
+	t := NewExpressionTokenizer()
 	for i := 0; i < b.N; i++ {
 		input := "Name eq 'Milk' and Price lt 2.55"
 		if _, err := t.Tokenize(input); err != nil {
@@ -1481,58 +1469,11 @@ func BenchmarkFilterTokenizer(b *testing.B) {
 	}
 }
 
-// Check if two slices of tokens are the same.
-func CompareTokens(expected, actual []*Token) (bool, error) {
-	if len(expected) != len(actual) {
-		return false, fmt.Errorf("Different lengths. Expected %d, Got %d", len(expected), len(actual))
-	}
-	for i := range expected {
-		if expected[i].Type != actual[i].Type {
-			return false, fmt.Errorf("Different token types at index %d. Expected %v, Got %v. Value: %v",
-				i, expected[i].Type, actual[i].Type, expected[i].Value)
-		}
-		if expected[i].Value != actual[i].Value {
-			return false, fmt.Errorf("Different token values at index %d. Expected %v, Got %v",
-				i, expected[i].Value, actual[i].Value)
-		}
-	}
-	return true, nil
-}
-
-func CompareQueue(expect []*Token, b *tokenQueue) (bool, error) {
-	bl := func() int {
-		if b.Empty() {
-			return 0
-		}
-		l := 1
-		for node := b.Head; node != b.Tail; node = node.Next {
-			l++
-		}
-		return l
-	}()
-	if len(expect) != bl {
-		return false, fmt.Errorf("Different lengths. Got %d, expected %d", bl, len(expect))
-	}
-	node := b.Head
-	for i := range expect {
-		if expect[i].Type != node.Token.Type {
-			return false, fmt.Errorf("Different token types at index %d. Got: %v, expected: %v. Expected value: %v",
-				i, node.Token.Type, expect[i].Type, expect[i].Value)
-		}
-		if expect[i].Value != node.Token.Value {
-			return false, fmt.Errorf("Different token values at index %d. Got: %v, expected: %v",
-				i, node.Token.Value, expect[i].Value)
-		}
-		node = node.Next
-	}
-	return true, nil
-}
-
 func TestFilterParserTree(t *testing.T) {
 
 	input := "not (A eq B)"
 
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1560,21 +1501,9 @@ func TestFilterParserTree(t *testing.T) {
 
 }
 
-func printTree(n *ParseNode) {
-	fmt.Printf("Tree:\n%s\n", n.String())
-}
-
-func printTokens(tokens []*Token) {
-	s := make([]string, len(tokens))
-	for i := range tokens {
-		s[i] = tokens[i].Value
-	}
-	fmt.Printf("TOKENS: %s\n", strings.Join(s, " "))
-}
-
-func TestNestedPath(t *testing.T) {
+func TestFilterNestedPath(t *testing.T) {
 	input := "Address/City eq 'Redmond'"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1592,23 +1521,22 @@ func TestNestedPath(t *testing.T) {
 	}
 
 	var expect []expectedParseNode = []expectedParseNode{
-		{"eq", 0},
-		{"/", 1},
-		{"Address", 2},
-		{"City", 2},
-		{"'Redmond'", 1},
+		{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 1, Type: ExpressionTokenNav},
+		{Value: "Address", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "City", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "'Redmond'", Depth: 1, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestMultipleNestedPath(t *testing.T) {
+func TestFilterMultipleNestedPath(t *testing.T) {
 	input := "Product/Address/City eq 'Redmond'"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1626,27 +1554,26 @@ func TestMultipleNestedPath(t *testing.T) {
 	}
 
 	var expect []expectedParseNode = []expectedParseNode{
-		{"eq", 0},
-		{"/", 1},
-		{"/", 2},
-		{"Product", 3},
-		{"Address", 3},
-		{"City", 2},
-		{"'Redmond'", 1},
+		{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 1, Type: ExpressionTokenNav},
+		{Value: "/", Depth: 2, Type: ExpressionTokenNav},
+		{Value: "Product", Depth: 3, Type: ExpressionTokenLiteral},
+		{Value: "Address", Depth: 3, Type: ExpressionTokenLiteral},
+		{Value: "City", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "'Redmond'", Depth: 1, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestSubstringFunction(t *testing.T) {
+func TestFilterSubstringFunction(t *testing.T) {
 	// substring can take 2 or 3 arguments.
 	{
 		input := "substring(CompanyName,1) eq 'Foo'"
-		tokens, err := GlobalFilterTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1662,22 +1589,21 @@ func TestSubstringFunction(t *testing.T) {
 			return
 		}
 		var expect []expectedParseNode = []expectedParseNode{
-			{"eq", 0},
-			{"substring", 1},
-			{"CompanyName", 2},
-			{"1", 2},
-			{"'Foo'", 1},
+			{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "substring", Depth: 1, Type: ExpressionTokenFunc},
+			{Value: "CompanyName", Depth: 2, Type: ExpressionTokenLiteral},
+			{Value: "1", Depth: 2, Type: ExpressionTokenInteger},
+			{Value: "'Foo'", Depth: 1, Type: ExpressionTokenString},
 		}
 		pos := 0
 		err = CompareTree(tree, expect, &pos, 0)
 		if err != nil {
-			printTree(tree)
-			t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+			t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 		}
 	}
 	{
 		input := "substring(CompanyName,1,2) eq 'lf'"
-		tokens, err := GlobalFilterTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1693,40 +1619,39 @@ func TestSubstringFunction(t *testing.T) {
 			return
 		}
 		var expect []expectedParseNode = []expectedParseNode{
-			{"eq", 0},
-			{"substring", 1},
-			{"CompanyName", 2},
-			{"1", 2},
-			{"2", 2},
-			{"'lf'", 1},
+			{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "substring", Depth: 1, Type: ExpressionTokenFunc},
+			{Value: "CompanyName", Depth: 2, Type: ExpressionTokenLiteral},
+			{Value: "1", Depth: 2, Type: ExpressionTokenInteger},
+			{Value: "2", Depth: 2, Type: ExpressionTokenInteger},
+			{Value: "'lf'", Depth: 1, Type: ExpressionTokenString},
 		}
 		pos := 0
 		err = CompareTree(tree, expect, &pos, 0)
 		if err != nil {
-			printTree(tree)
-			t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+			t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 		}
 	}
 }
 
-func TestSubstringofFunction(t *testing.T) {
+func TestFilterSubstringofFunction(t *testing.T) {
 	// Previously, the parser was incorrectly interpreting the 'substringof' function as the 'sub' operator.
 	input := "substringof('Alfreds', CompanyName) eq true"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	{
 		expect := []*Token{
-			{Value: "substringof", Type: FilterTokenFunc},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "'Alfreds'", Type: FilterTokenString},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "CompanyName", Type: FilterTokenLiteral},
-			{Value: ")", Type: FilterTokenCloseParen},
-			{Value: "eq", Type: FilterTokenLogical},
-			{Value: "true", Type: FilterTokenBoolean},
+			{Value: "substringof", Type: ExpressionTokenFunc},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "'Alfreds'", Type: ExpressionTokenString},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "CompanyName", Type: ExpressionTokenLiteral},
+			{Value: ")", Type: ExpressionTokenCloseParen},
+			{Value: "eq", Type: ExpressionTokenLogical},
+			{Value: "true", Type: ExpressionTokenBoolean},
 		}
 		result, err := CompareTokens(expect, tokens)
 		if !result {
@@ -1740,12 +1665,13 @@ func TestSubstringofFunction(t *testing.T) {
 	}
 	{
 		expect := []*Token{
-			{Value: "'Alfreds'", Type: FilterTokenString},
-			{Value: "CompanyName", Type: FilterTokenLiteral},
+			{Value: "'Alfreds'", Type: ExpressionTokenString},
+			{Value: "CompanyName", Type: ExpressionTokenLiteral},
 			{Value: "2", Type: TokenTypeArgCount}, // The number of function arguments.
-			{Value: "substringof", Type: FilterTokenFunc},
-			{Value: "true", Type: FilterTokenBoolean},
-			{Value: "eq", Type: FilterTokenLogical},
+			{Value: TokenListExpr, Type: TokenTypeListExpr},
+			{Value: "substringof", Type: ExpressionTokenFunc},
+			{Value: "true", Type: ExpressionTokenBoolean},
+			{Value: "eq", Type: ExpressionTokenLogical},
 		}
 		result, err := CompareQueue(expect, output)
 		if !result {
@@ -1758,47 +1684,46 @@ func TestSubstringofFunction(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"eq", 0},
-		{"substringof", 1},
-		{"'Alfreds'", 2},
-		{"CompanyName", 2},
-		{"true", 1},
+		{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "substringof", Depth: 1, Type: ExpressionTokenFunc},
+		{Value: "'Alfreds'", Depth: 2, Type: ExpressionTokenString},
+		{Value: "CompanyName", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "true", Depth: 1, Type: ExpressionTokenBoolean},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
 // TestSubstringNestedFunction tests the substring function with a nested call
 // to substring, with the use of 2-argument and 3-argument substring.
-func TestSubstringNestedFunction(t *testing.T) {
+func TestFilterSubstringNestedFunction(t *testing.T) {
 	// Previously, the parser was incorrectly interpreting the 'substringof' function as the 'sub' operator.
 	input := "substring(substring('Francisco', 1), 3, 2) eq 'ci'"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	{
 		expect := []*Token{
-			{Value: "substring", Type: FilterTokenFunc},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "substring", Type: FilterTokenFunc},
-			{Value: "(", Type: FilterTokenOpenParen},
-			{Value: "'Francisco'", Type: FilterTokenString},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "1", Type: FilterTokenInteger},
-			{Value: ")", Type: FilterTokenCloseParen},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "3", Type: FilterTokenInteger},
-			{Value: ",", Type: FilterTokenComma},
-			{Value: "2", Type: FilterTokenInteger},
-			{Value: ")", Type: FilterTokenCloseParen},
-			{Value: "eq", Type: FilterTokenLogical},
-			{Value: "'ci'", Type: FilterTokenString},
+			{Value: "substring", Type: ExpressionTokenFunc},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "substring", Type: ExpressionTokenFunc},
+			{Value: "(", Type: ExpressionTokenOpenParen},
+			{Value: "'Francisco'", Type: ExpressionTokenString},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "1", Type: ExpressionTokenInteger},
+			{Value: ")", Type: ExpressionTokenCloseParen},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "3", Type: ExpressionTokenInteger},
+			{Value: ",", Type: ExpressionTokenComma},
+			{Value: "2", Type: ExpressionTokenInteger},
+			{Value: ")", Type: ExpressionTokenCloseParen},
+			{Value: "eq", Type: ExpressionTokenLogical},
+			{Value: "'ci'", Type: ExpressionTokenString},
 		}
 		result, err := CompareTokens(expect, tokens)
 		if !result {
@@ -1812,16 +1737,18 @@ func TestSubstringNestedFunction(t *testing.T) {
 	}
 	{
 		expect := []*Token{
-			{Value: "'Francisco'", Type: FilterTokenString},
-			{Value: "1", Type: FilterTokenInteger},
+			{Value: "'Francisco'", Type: ExpressionTokenString},
+			{Value: "1", Type: ExpressionTokenInteger},
 			{Value: "2", Type: TokenTypeArgCount}, // The number of function arguments.
-			{Value: "substring", Type: FilterTokenFunc},
-			{Value: "3", Type: FilterTokenInteger},
-			{Value: "2", Type: FilterTokenInteger},
+			{Value: TokenListExpr, Type: TokenTypeListExpr},
+			{Value: "substring", Type: ExpressionTokenFunc},
+			{Value: "3", Type: ExpressionTokenInteger},
+			{Value: "2", Type: ExpressionTokenInteger},
 			{Value: "3", Type: TokenTypeArgCount}, // The number of function arguments.
-			{Value: "substring", Type: FilterTokenFunc},
-			{Value: "'ci'", Type: FilterTokenString},
-			{Value: "eq", Type: FilterTokenLogical},
+			{Value: TokenListExpr, Type: TokenTypeListExpr},
+			{Value: "substring", Type: ExpressionTokenFunc},
+			{Value: "'ci'", Type: ExpressionTokenString},
+			{Value: "eq", Type: ExpressionTokenLogical},
 		}
 		result, err := CompareQueue(expect, output)
 		if !result {
@@ -1834,26 +1761,25 @@ func TestSubstringNestedFunction(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"eq", 0},
-		{"substring", 1},
-		{"substring", 2},
-		{"'Francisco'", 3},
-		{"1", 3},
-		{"3", 2},
-		{"2", 2},
-		{"'ci'", 1},
+		{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "substring", Depth: 1, Type: ExpressionTokenFunc},
+		{Value: "substring", Depth: 2, Type: ExpressionTokenFunc},
+		{Value: "'Francisco'", Depth: 3, Type: ExpressionTokenString},
+		{Value: "1", Depth: 3, Type: ExpressionTokenInteger},
+		{Value: "3", Depth: 2, Type: ExpressionTokenInteger},
+		{Value: "2", Depth: 2, Type: ExpressionTokenInteger},
+		{Value: "'ci'", Depth: 1, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
-func TestGeoFunctions(t *testing.T) {
+func TestFilterGeoFunctions(t *testing.T) {
 	// Previously, the parser was incorrectly interpreting the 'geo.xxx' functions as the 'ge' operator.
 	input := "geo.distance(CurrentPosition,TargetPosition)"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1869,21 +1795,20 @@ func TestGeoFunctions(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"geo.distance", 0},
-		{"CurrentPosition", 1},
-		{"TargetPosition", 1},
+		{Value: "geo.distance", Depth: 0, Type: ExpressionTokenFunc},
+		{Value: "CurrentPosition", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "TargetPosition", Depth: 1, Type: ExpressionTokenLiteral},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestLambdaAny(t *testing.T) {
+func TestFilterLambdaAny(t *testing.T) {
 	input := "Tags/any(var:var/Key eq 'Site')"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1900,28 +1825,27 @@ func TestLambdaAny(t *testing.T) {
 	}
 
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
-		{"var", 2},
-		{"eq", 2},
-		{"/", 3},
-		{"var", 4},
-		{"Key", 4},
-		{"'Site'", 3},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Tags", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "var", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "eq", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 3, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 4, Type: ExpressionTokenLiteral},
+		{Value: "Key", Depth: 4, Type: ExpressionTokenLiteral},
+		{Value: "'Site'", Depth: 3, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestLambdaAnyNot(t *testing.T) {
+func TestFilterLambdaAnyNot(t *testing.T) {
 	input := "Price/any(t:not (12345 eq t ))"
 
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1933,15 +1857,16 @@ func TestLambdaAnyNot(t *testing.T) {
 	}
 	{
 		expect := []*Token{
-			{Value: "Price", Type: FilterTokenLiteral},
-			{Value: "t", Type: FilterTokenLiteral},
-			{Value: "12345", Type: FilterTokenInteger},
-			{Value: "t", Type: FilterTokenLiteral},
-			{Value: "eq", Type: FilterTokenLogical},
-			{Value: "not", Type: FilterTokenLogical},
+			{Value: "Price", Type: ExpressionTokenLiteral},
+			{Value: "t", Type: ExpressionTokenLiteral},
+			{Value: "12345", Type: ExpressionTokenInteger},
+			{Value: "t", Type: ExpressionTokenLiteral},
+			{Value: "eq", Type: ExpressionTokenLogical},
+			{Value: "not", Type: ExpressionTokenLogical},
 			{Value: "2", Type: TokenTypeArgCount},
-			{Value: "any", Type: FilterTokenLambda},
-			{Value: "/", Type: FilterTokenOp},
+			{Value: TokenListExpr, Type: TokenTypeListExpr},
+			{Value: "any", Type: ExpressionTokenLambda},
+			{Value: "/", Type: ExpressionTokenLambdaNav},
 		}
 		var result bool
 		result, err = CompareQueue(expect, output)
@@ -1955,26 +1880,25 @@ func TestLambdaAnyNot(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Price", 1},
-		{"any", 1},
-		{"t", 2},
-		{"not", 2},
-		{"eq", 3},
-		{"12345", 4},
-		{"t", 4},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Price", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "t", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "not", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "eq", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "12345", Depth: 4, Type: ExpressionTokenInteger},
+		{Value: "t", Depth: 4, Type: ExpressionTokenLiteral},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestLambdaAnyAnd(t *testing.T) {
+func TestFilterLambdaAnyAnd(t *testing.T) {
 	input := "Tags/any(var:var/Key eq 'Site' and var/Value eq 'London')"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1991,68 +1915,66 @@ func TestLambdaAnyAnd(t *testing.T) {
 	}
 
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
-		{"var", 2},
-		{"and", 2},
-		{"eq", 3},
-		{"/", 4},
-		{"var", 5},
-		{"Key", 5},
-		{"'Site'", 4},
-		{"eq", 3},
-		{"/", 4},
-		{"var", 5},
-		{"Value", 5},
-		{"'London'", 4},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Tags", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "var", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "and", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "eq", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 4, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "Key", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "'Site'", Depth: 4, Type: ExpressionTokenString},
+		{Value: "eq", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 4, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "Value", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "'London'", Depth: 4, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestLambdaNestedAny(t *testing.T) {
+func TestFilterLambdaNestedAny(t *testing.T) {
 	input := "Enabled/any(t:t/Value eq Config/any(c:c/AdminState eq 'TRUE'))"
 	q, err := ParseFilterString(input)
 	if err != nil {
-		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Enabled", 1},
-		{"any", 1},
-		{"t", 2},
-		{"eq", 2},
-		{"/", 3},
-		{"t", 4},
-		{"Value", 4},
-		{"/", 3},
-		{"Config", 4},
-		{"any", 4},
-		{"c", 5},
-		{"eq", 5},
-		{"/", 6},
-		{"c", 7},
-		{"AdminState", 7},
-		{"'TRUE'", 6},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Enabled", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "t", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "eq", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 3, Type: ExpressionTokenNav},
+		{Value: "t", Depth: 4, Type: ExpressionTokenLiteral},
+		{Value: "Value", Depth: 4, Type: ExpressionTokenLiteral},
+		{Value: "/", Depth: 3, Type: ExpressionTokenLambdaNav},
+		{Value: "Config", Depth: 4, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 4, Type: ExpressionTokenLambda},
+		{Value: "c", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "eq", Depth: 5, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 6, Type: ExpressionTokenNav},
+		{Value: "c", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "AdminState", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "'TRUE'", Depth: 6, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		printTree(q.Tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 }
 
 // TestLambdaAnyNested validates the any() lambda function with multiple nested properties.
-func TestLambdaAnyNestedProperties(t *testing.T) {
+func TestFilterLambdaAnyNestedProperties(t *testing.T) {
 	input := "Config/any(var:var/Config/Priority eq 123)"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2069,29 +1991,28 @@ func TestLambdaAnyNestedProperties(t *testing.T) {
 	}
 
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Config", 1},
-		{"any", 1},
-		{"var", 2},
-		{"eq", 2},
-		{"/", 3},
-		{"/", 4},
-		{"var", 5},
-		{"Config", 5},
-		{"Priority", 4},
-		{"123", 3},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Config", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "var", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "eq", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 3, Type: ExpressionTokenNav},
+		{Value: "/", Depth: 4, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "Config", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "Priority", Depth: 4, Type: ExpressionTokenLiteral},
+		{Value: "123", Depth: 3, Type: ExpressionTokenInteger},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestLambda2(t *testing.T) {
+func TestFilterLambda2(t *testing.T) {
 	input := "Tags/any(var:var/Key eq 'Site' and var/Value eq 'London' or Price gt 1.0)"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2108,37 +2029,36 @@ func TestLambda2(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
-		{"var", 2},
-		{"or", 2},
-		{"and", 3},
-		{"eq", 4},
-		{"/", 5},
-		{"var", 6},
-		{"Key", 6},
-		{"'Site'", 5},
-		{"eq", 4},
-		{"/", 5},
-		{"var", 6},
-		{"Value", 6},
-		{"'London'", 5},
-		{"gt", 3},
-		{"Price", 4},
-		{"1.0", 4},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Tags", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "var", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "or", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "and", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "eq", Depth: 4, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 5, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "Key", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "'Site'", Depth: 5, Type: ExpressionTokenString},
+		{Value: "eq", Depth: 4, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 5, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "Value", Depth: 6, Type: ExpressionTokenLiteral},
+		{Value: "'London'", Depth: 5, Type: ExpressionTokenString},
+		{Value: "gt", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "Price", Depth: 4, Type: ExpressionTokenLiteral},
+		{Value: "1.0", Depth: 4, Type: ExpressionTokenFloat},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestLambda3(t *testing.T) {
+func TestFilterLambda3(t *testing.T) {
 	input := "Tags/any(var:var/Key eq 'Site' and var/Value eq 'London' or Price gt 1.0 or contains(var/Value, 'Smith'))"
-	tokens, err := GlobalFilterTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2155,51 +2075,50 @@ func TestLambda3(t *testing.T) {
 		return
 	}
 	var expect []expectedParseNode = []expectedParseNode{
-		{"/", 0},
-		{"Tags", 1},
-		{"any", 1},
-		{"var", 2},
-		{"or", 2},
-		{"or", 3},
-		{"and", 4},
-		{"eq", 5},
-		{"/", 6},
-		{"var", 7},
-		{"Key", 7},
-		{"'Site'", 6},
-		{"eq", 5},
-		{"/", 6},
-		{"var", 7},
-		{"Value", 7},
-		{"'London'", 6},
-		{"gt", 4},
-		{"Price", 5},
-		{"1.0", 5},
-		{"contains", 3},
-		{"/", 4},
-		{"var", 5},
-		{"Value", 5},
-		{"'Smith'", 4},
+		{Value: "/", Depth: 0, Type: ExpressionTokenLambdaNav},
+		{Value: "Tags", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "any", Depth: 1, Type: ExpressionTokenLambda},
+		{Value: "var", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "or", Depth: 2, Type: ExpressionTokenLogical},
+		{Value: "or", Depth: 3, Type: ExpressionTokenLogical},
+		{Value: "and", Depth: 4, Type: ExpressionTokenLogical},
+		{Value: "eq", Depth: 5, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 6, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "Key", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "'Site'", Depth: 6, Type: ExpressionTokenString},
+		{Value: "eq", Depth: 5, Type: ExpressionTokenLogical},
+		{Value: "/", Depth: 6, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "Value", Depth: 7, Type: ExpressionTokenLiteral},
+		{Value: "'London'", Depth: 6, Type: ExpressionTokenString},
+		{Value: "gt", Depth: 4, Type: ExpressionTokenLogical},
+		{Value: "Price", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "1.0", Depth: 5, Type: ExpressionTokenFloat},
+		{Value: "contains", Depth: 3, Type: ExpressionTokenFunc},
+		{Value: "/", Depth: 4, Type: ExpressionTokenNav},
+		{Value: "var", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "Value", Depth: 5, Type: ExpressionTokenLiteral},
+		{Value: "'Smith'", Depth: 4, Type: ExpressionTokenString},
 	}
 	pos := 0
 	err = CompareTree(tree, expect, &pos, 0)
 	if err != nil {
-		printTree(tree)
-		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
 
-func TestFilterTokenizerExists(t *testing.T) {
+func TestExpressionTokenizerExists(t *testing.T) {
 
-	tokenizer := FilterTokenizer()
+	tokenizer := NewExpressionTokenizer()
 	input := "exists(Name,false)"
 	expect := []*Token{
-		{Value: "exists", Type: FilterTokenFunc},
-		{Value: "(", Type: FilterTokenOpenParen},
-		{Value: "Name", Type: FilterTokenLiteral},
-		{Value: ",", Type: FilterTokenComma},
-		{Value: "false", Type: FilterTokenBoolean},
-		{Value: ")", Type: FilterTokenCloseParen},
+		{Value: "exists", Type: ExpressionTokenFunc},
+		{Value: "(", Type: ExpressionTokenOpenParen},
+		{Value: "Name", Type: ExpressionTokenLiteral},
+		{Value: ",", Type: ExpressionTokenComma},
+		{Value: "false", Type: ExpressionTokenBoolean},
+		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
 	output, err := tokenizer.Tokenize(input)
 	if err != nil {
@@ -2210,33 +2129,4 @@ func TestFilterTokenizerExists(t *testing.T) {
 	if !result {
 		t.Error(err)
 	}
-}
-
-// CompareTree compares a tree representing a ODATA filter with the expected results.
-// The expected values are a slice of nodes in breadth-first traversal.
-func CompareTree(node *ParseNode, expect []expectedParseNode, pos *int, level int) error {
-	if *pos >= len(expect) {
-		return fmt.Errorf("Unexpected token. Got %s, expected no value", node.Token.Value)
-	}
-	if node.Token.Value != expect[*pos].Value {
-		return fmt.Errorf("Unexpected token. Got %s -> %d, expected: %s -> %d", node.Token.Value, level, expect[*pos].Value, expect[*pos].Level)
-	}
-	if level != expect[*pos].Level {
-		return fmt.Errorf("Unexpected level. Got %s -> %d, expected: %s -> %d", node.Token.Value, level, expect[*pos].Value, expect[*pos].Level)
-	}
-	for _, v := range node.Children {
-		*pos++
-		if err := CompareTree(v, expect, pos, level+1); err != nil {
-			return err
-		}
-	}
-	if level == 0 && *pos+1 != len(expect) {
-		return fmt.Errorf("Expected number of tokens: %d, got %d", len(expect), *pos+1)
-	}
-	return nil
-}
-
-type expectedParseNode struct {
-	Value string
-	Level int
 }

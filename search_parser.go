@@ -1,7 +1,13 @@
 package godata
 
+type SearchTokenType int
+
+func (s SearchTokenType) Value() int {
+	return (int)(s)
+}
+
 const (
-	SearchTokenLiteral int = iota
+	SearchTokenLiteral SearchTokenType = iota
 	SearchTokenOpenParen
 	SearchTokenCloseParen
 	SearchTokenOp

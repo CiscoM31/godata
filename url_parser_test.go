@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
 	"testing"
@@ -239,7 +240,8 @@ func TestUnescapeStringTokens(t *testing.T) {
 		// If error is expected, it is used to match err.Error()
 		errRegex *regexp.Regexp
 
-		expectedTree []expectedParseNode
+		expectedFilterTree []expectedParseNode
+		expectedOrderBy    []OrderByItem
 	}{
 		{
 			// Unescaped single quotes.
@@ -247,16 +249,16 @@ func TestUnescapeStringTokens(t *testing.T) {
 			// 1. there are two consecutive literal values, 'ab' and 'c,
 			// 2. 'c is not terminated with a quote.
 			url:      "/Books?$filter=Description eq 'ab'c'",
-			errRegex: regexp.MustCompile("No matching token for '"),
+			errRegex: regexp.MustCompile("Token ''' is invalid"),
 		},
 		{
 			// Simple string with special characters.
 			url:      "/Books?$filter=Description eq 'abc'",
 			errRegex: nil,
-			expectedTree: []expectedParseNode{
-				{"eq", 0},
-				{"Description", 1},
-				{"'abc'", 1},
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'abc'", Depth: 1, Type: ExpressionTokenString},
 			},
 		},
 		{
@@ -266,23 +268,23 @@ func TestUnescapeStringTokens(t *testing.T) {
 			// This is done to make the input strings in the ABNF test cases more readable.
 			url:      "/Books?$filter=Description eq 'ab''c'",
 			errRegex: nil,
-			expectedTree: []expectedParseNode{
-				{"eq", 0},
-				{"Description", 1},
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
 				// Note below two consecutive single-quotes are the encoding of one single quote,
 				// so after the tokenization it is unescaped to one single quote.
-				{"'ab'c'", 1},
+				{Value: "'ab'c'", Depth: 1, Type: ExpressionTokenString},
 			},
 		},
 		{
 			// Test single quotes escaped as %27.
 			url:      "/Books?$filter=Description eq 'O%27%27Neil'",
 			errRegex: nil,
-			expectedTree: []expectedParseNode{
-				{"eq", 0},
-				{"Description", 1},
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
 				// Percent-encoded character %27 must be decoded to single quote.
-				{"'O'Neil'", 1},
+				{Value: "'O'Neil'", Depth: 1, Type: ExpressionTokenString},
 			},
 		},
 		{
@@ -290,11 +292,11 @@ func TestUnescapeStringTokens(t *testing.T) {
 			// This time all single quotes are percent-encoded, including the outer single-quotes.
 			url:      "/Books?$filter=Description eq %27O%27%27Neil%27",
 			errRegex: nil,
-			expectedTree: []expectedParseNode{
-				{"eq", 0},
-				{"Description", 1},
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
 				// Percent-encoded character %27 must be decoded to single quote.
-				{"'O'Neil'", 1},
+				{Value: "'O'Neil'", Depth: 1, Type: ExpressionTokenString},
 			},
 		},
 		{
@@ -302,21 +304,131 @@ func TestUnescapeStringTokens(t *testing.T) {
 			// but the string tokens are parsed anyway.
 			url:      "/Books?$filter=Description eq '♺⛺⛵⚡'",
 			errRegex: nil,
-			expectedTree: []expectedParseNode{
-				{"eq", 0},
-				{"Description", 1},
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
 				// Percent-encoded character %27 must be decoded to single quote.
-				{"'♺⛺⛵⚡'", 1},
+				{Value: "'♺⛺⛵⚡'", Depth: 1, Type: ExpressionTokenString},
 			},
 		},
 		{
 			// Strings with percent encoding
 			url:      "/Books?$filter=Description eq '%34%35%36'",
 			errRegex: nil,
-			expectedTree: []expectedParseNode{
-				{"eq", 0},
-				{"Description", 1},
-				{"'456'", 1},
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'456'", Depth: 1, Type: ExpressionTokenString},
+			},
+		},
+		{
+			url:      "/Books?$filter=Description eq 'abc'&$orderby=Title",
+			errRegex: nil,
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'abc'", Depth: 1, Type: ExpressionTokenString},
+			},
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Title"}, Order: "asc"},
+			},
+		},
+		{
+			url:      "/Books?$filter=Description eq 'abc'&$orderby=Title asc",
+			errRegex: nil,
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'abc'", Depth: 1, Type: ExpressionTokenString},
+			},
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Title"}, Order: "asc"},
+			},
+		},
+		{
+			url:      "/Books?$filter=Description eq 'abc'&$orderby=Title desc",
+			errRegex: nil,
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'abc'", Depth: 1, Type: ExpressionTokenString},
+			},
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Title"}, Order: "desc"},
+			},
+		},
+		{
+			url:      "/Books?$filter=Description eq 'abc'&$orderby=Author asc,Title desc",
+			errRegex: nil,
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'abc'", Depth: 1, Type: ExpressionTokenString},
+			},
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Author"}, Order: "asc"},
+				{Field: &Token{Value: "Title"}, Order: "desc"},
+			},
+		},
+		{
+			url:      "/Books?$filter=Description eq 'abc'&$orderby=Author    asc,Title     DESC",
+			errRegex: nil,
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'abc'", Depth: 1, Type: ExpressionTokenString},
+			},
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Author"}, Order: "asc"},
+				{Field: &Token{Value: "Title"}, Order: "desc"},
+			},
+		},
+		{
+			// Invalid sort directive
+			url:                "/Books?$filter=Description eq 'abc'&$orderby=Author ascending",
+			errRegex:           regexp.MustCompile("Invalid sort directive.*"),
+			expectedFilterTree: nil,
+			expectedOrderBy:    nil,
+		},
+		/*
+			TODO: this is not supported yet.
+			{
+				// return all Categories ordered by the number of Products within each category.
+				url:                "Categories?$orderby=Products/$count",
+				errRegex:           nil,
+				expectedFilterTree: nil,
+				expectedOrderBy: []OrderByItem{
+					{
+						Field: &Token{Value: "Products/$count"},
+						Order: "asc",
+					},
+				},
+			},
+		*/
+		{
+			url:      "/Product?$filter=Description eq 'abc'&$orderby=part_x0020_number asc",
+			errRegex: nil,
+			expectedFilterTree: []expectedParseNode{
+				{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+				{Value: "Description", Depth: 1, Type: ExpressionTokenLiteral},
+				{Value: "'abc'", Depth: 1, Type: ExpressionTokenString},
+			},
+			expectedOrderBy: []OrderByItem{
+				{
+					Field: &Token{Value: "part number"},
+					Order: "asc",
+				},
+			},
+		},
+		{
+			url:                "/Product?$orderby=Tags(Key='Environment')/Value desc",
+			errRegex:           nil,
+			expectedFilterTree: nil,
+			expectedOrderBy: []OrderByItem{
+				{
+					Field: &Token{Value: "Tags(Key='Environment')/Value"},
+					Order: "desc",
+				},
 			},
 		},
 	}
@@ -326,6 +438,7 @@ func TestUnescapeStringTokens(t *testing.T) {
 			t.Errorf("Test case '%s' failed: %v", testCase.url, err)
 			continue
 		}
+		t.Logf("Running test case %s", testCase.url)
 		var request *GoDataRequest
 		urlQuery := parsedUrl.Query()
 		request, err = ParseRequest(parsedUrl.Path, urlQuery, false /*strict*/)
@@ -343,14 +456,46 @@ func TestUnescapeStringTokens(t *testing.T) {
 		if err == nil {
 			filter := request.Query.Filter
 			if filter == nil {
-				t.Errorf("Test case '%s' failed. Parsed filter is nil", testCase.url)
-				continue
+				if testCase.expectedFilterTree != nil {
+					t.Errorf("Test case '%s' failed. Parsed filter is nil", testCase.url)
+				}
+			} else {
+				pos := 0
+				err = CompareTree(filter.Tree, testCase.expectedFilterTree, &pos, 0)
+				if err != nil {
+					t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+				}
 			}
-			pos := 0
-			err = CompareTree(filter.Tree, testCase.expectedTree, &pos, 0)
+
+			err = compareOrderBy(request.Query.OrderBy, testCase.expectedOrderBy)
 			if err != nil {
-				t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+				t.Errorf("orderby not match expected value. error: %s", err.Error())
 			}
 		}
 	}
+}
+
+func compareOrderBy(obtained *GoDataOrderByQuery, expected []OrderByItem) error {
+	if len(expected) == 0 && (obtained == nil || obtained.OrderByItems == nil) {
+		return nil
+	}
+	if len(expected) > 0 && (obtained == nil || obtained.OrderByItems == nil) {
+		return fmt.Errorf("Unexpected number of $orderby fields. Got nil, expected %d",
+			len(expected))
+	}
+	if len(obtained.OrderByItems) != len(expected) {
+		return fmt.Errorf("Unexpected number of $orderby fields. Got %d, expected %d",
+			len(obtained.OrderByItems), len(expected))
+	}
+	for i, v := range expected {
+		if v.Field.Value != obtained.OrderByItems[i].Field.Value {
+			return fmt.Errorf("Unexpected $orderby field at index %d. Got '%s', expected '%s'",
+				i, obtained.OrderByItems[i].Field.Value, v.Field.Value)
+		}
+		if v.Order != obtained.OrderByItems[i].Order {
+			return fmt.Errorf("Unexpected $orderby at index %d. Got '%s', expected '%s'",
+				i, obtained.OrderByItems[i].Order, v.Order)
+		}
+	}
+	return nil
 }

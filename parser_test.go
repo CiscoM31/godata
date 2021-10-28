@@ -182,10 +182,12 @@ func TestFunc(t *testing.T) {
 
 	// 5 pi * sin 3 + 5 sin 3 2 4 volume 2 / + max
 	expected := []string{
-		"5", "pi", "*", "1" /* arg count */, "sin", "3", "+", "5", "1" /* arg count */, "sin",
-		"3", "2", "4", "3" /* arg count */, "volume", "2",
+		"5", "pi", "*", "1" /* arg count */, "list", /* list expression */
+		"sin", "3", "+", "5", "1" /* arg count */, "list", /* list expression */
+		"sin", "3", "2", "4", "3" /* arg count */, "list", /* list expression */
+		"volume", "2",
 		"/", "+",
-		"2" /* arg count */, "max"}
+		"2" /* arg count */, "list" /* list expression */, "max"}
 	result, err := parser.InfixToPostfix(tokens)
 
 	if err != nil {
@@ -201,8 +203,7 @@ func TestFunc(t *testing.T) {
 
 		token := result.Dequeue()
 		if v != token.Value {
-			t.Error("Expected " + v + " at index " + strconv.Itoa(i) + " got " +
-				token.Value)
+			t.Errorf("Expected %v at index %d got %v", v, i, token.Value)
 		}
 	}
 }
@@ -243,7 +244,7 @@ func TestTree(t *testing.T) {
 
 	root, err := parser.PostfixToTree(result)
 	if err != nil {
-		t.Error("Error parsing query")
+		t.Errorf("Error parsing query: %v", err)
 		return
 	}
 	if root.Token.Value != "sin" {
