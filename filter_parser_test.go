@@ -1204,6 +1204,8 @@ func TestValidFilterSyntax(t *testing.T) {
 		"Price sub 0.55 eq 2.00",
 		"Price SUB 0.56 EQ 2.00", // 4.01 Services MUST support case-insensitive operator names.
 		"Price mul 2.0 eq 5.10",
+		"Price mul Quantity gt 300.0",   // Arithmetic operator with two fields
+		"(Price mul Quantity) gt 300.0", // Arithmetic operator with two fields
 		"Price div 2.55 eq 1",
 		"Rating div 2 eq 2",
 		"Rating mod 5 eq 0",

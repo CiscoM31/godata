@@ -432,6 +432,15 @@ func TestUrlTokenization(t *testing.T) {
 				},
 			},
 		},
+		{
+			url:      "/Books?$filter=Description eq 'abc'&$order=Title",
+			errRegex: nil,
+			expectedTree: []expectedParseNode{
+				{"eq", 0},
+				{"Description", 1},
+				{"'456'", 1},
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		parsedUrl, err := url.Parse(testCase.url)
