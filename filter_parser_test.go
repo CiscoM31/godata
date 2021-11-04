@@ -376,52 +376,6 @@ func TestFilterAnyWithNoArgs(t *testing.T) {
 	}
 }
 
-func TestFilterMul(t *testing.T) {
-	{
-		input := "Price mul Quantity gt 300.0"
-		q, err := ParseFilterString(input)
-		if err != nil {
-			t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
-			return
-		}
-		var expect []expectedParseNode = []expectedParseNode{
-			{"gt", 0},
-			{"mul", 1},
-			{"Price", 2},
-			{"Quantity", 2},
-			{"300.0", 1},
-		}
-		pos := 0
-		err = CompareTree(q.Tree, expect, &pos, 0)
-		if err != nil {
-			fmt.Printf("Got tree:\n%v\n", q.Tree.String())
-			t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
-		}
-
-	}
-	{
-		input := "123.45 lt Price mul Quantity"
-		q, err := ParseFilterString(input)
-		if err != nil {
-			t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
-			return
-		}
-		var expect []expectedParseNode = []expectedParseNode{
-			{"lt", 0},
-			{"123.45", 1},
-			{"mul", 1},
-			{"Price", 2},
-			{"Quantity", 2},
-		}
-		pos := 0
-		err = CompareTree(q.Tree, expect, &pos, 0)
-		if err != nil {
-			fmt.Printf("Got tree:\n%v\n", q.Tree.String())
-			t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
-		}
-	}
-}
-
 func TestFilterDivby(t *testing.T) {
 	{
 		tokenizer := NewExpressionTokenizer()
@@ -1250,8 +1204,6 @@ func TestValidFilterSyntax(t *testing.T) {
 		"Price sub 0.55 eq 2.00",
 		"Price SUB 0.56 EQ 2.00", // 4.01 Services MUST support case-insensitive operator names.
 		"Price mul 2.0 eq 5.10",
-		"Price mul Quantity gt 300.0",   // Arithmetic operator with two fields
-		"(Price mul Quantity) gt 300.0", // Arithmetic operator with two fields
 		"Price div 2.55 eq 1",
 		"Rating div 2 eq 2",
 		"Rating mod 5 eq 0",

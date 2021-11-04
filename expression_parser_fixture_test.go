@@ -1180,4 +1180,24 @@ var testCases = []struct {
 			{Value: "'abc123'", Depth: 2, Type: ExpressionTokenString},
 		},
 	},
+	{
+		expression: "Price mul Quantity gt 300.0",
+		tree: []expectedParseNode{
+			{Value: "gt", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "mul", Depth: 1, Type: ExpressionTokenOp},
+			{Value: "Price", Depth: 2, Type: ExpressionTokenLiteral},
+			{Value: "Quantity", Depth: 2, Type: ExpressionTokenLiteral},
+			{Value: "300.0", Depth: 1, Type: ExpressionTokenFloat},
+		},
+	},
+	{
+		expression: "123.45 lt Price mul Quantity",
+		tree: []expectedParseNode{
+			{Value: "lt", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "123.45", Depth: 1, Type: ExpressionTokenFloat},
+			{Value: "mul", Depth: 1, Type: ExpressionTokenOp},
+			{Value: "Price", Depth: 2, Type: ExpressionTokenLiteral},
+			{Value: "Quantity", Depth: 2, Type: ExpressionTokenLiteral},
+		},
+	},
 }
