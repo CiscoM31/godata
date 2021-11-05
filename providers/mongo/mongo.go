@@ -113,8 +113,6 @@ func init() {
 		"or":  func(args ...interface{}) (interface{}, error) { return compileLogical("$or", args...) },
 		/*
 			"in": "{ %s: { $in: [ %s ] } }",
-			// logical operators
-			"not": "{ $not: { %s } }",
 			// string functions
 			"substring":   "$substrCP: [ %s, %s, %s ]",
 			"substringof": "{ $substrCP: [ %s, %s, %s ] }",
