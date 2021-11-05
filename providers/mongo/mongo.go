@@ -92,7 +92,7 @@ func compileLogical(operator string, args ...interface{}) (interface{}, error) {
 			children = append(children, v)
 		}
 	}
-	return bson.D{{Key: operator, Value: children}}, nil
+	return bson.D{bson.E{Key: operator, Value: children}}, nil
 }
 
 var compilerMap map[string]compile
