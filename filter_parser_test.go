@@ -375,6 +375,7 @@ func TestFilterAnyWithNoArgs(t *testing.T) {
 		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, q.Tree)
 	}
 }
+
 func TestFilterDivby(t *testing.T) {
 	{
 		tokenizer := NewExpressionTokenizer()
@@ -1151,6 +1152,8 @@ func TestValidFilterSyntax(t *testing.T) {
 		// "totalseconds(EndTime sub StartTime) lt duration'PT23H59'", // TODO The totalseconds function returns the duration of the value in total seconds, including fractional seconds.
 		"EndTime eq maxdatetime()",
 		"time(StartTime) le StartOfDay",
+		// See time function: https://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html#_Toc31361007
+		// Edm.TimeOfDay time(Edm.DateTimeOffset)
 		"time('2015-10-14T23:30:00.104+02:00') lt now()",
 		"time(2015-10-14T23:30:00.104+02:00) lt now()",
 		// Math functions
@@ -1201,6 +1204,8 @@ func TestValidFilterSyntax(t *testing.T) {
 		"Price sub 0.55 eq 2.00",
 		"Price SUB 0.56 EQ 2.00", // 4.01 Services MUST support case-insensitive operator names.
 		"Price mul 2.0 eq 5.10",
+		"Price mul Quantity gt 300.0",   // Arithmetic operator with two fields
+		"(Price mul Quantity) gt 300.0", // Arithmetic operator with two fields
 		"Price div 2.55 eq 1",
 		"Rating div 2 eq 2",
 		"Rating mod 5 eq 0",

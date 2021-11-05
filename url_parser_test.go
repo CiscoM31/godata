@@ -230,9 +230,10 @@ func TestUrlParserStrictValidation(t *testing.T) {
 
 }
 
-// TestUnescapeStringTokens tests string encoding rules specified in the ODATA ABNF:
+// TestUrlTokenization tests URL parsing
+// String encoding rules specified in the ODATA ABNF:
 // http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html#sec_URLSyntax
-func TestUnescapeStringTokens(t *testing.T) {
+func TestUrlTokenization(t *testing.T) {
 
 	testCases := []struct {
 		url string // The test URL
