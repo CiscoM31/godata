@@ -1,4 +1,4 @@
-module github.com/CiscoM31/godata/v2
+module github.com/CiscoM31/godata
 
 go 1.17
 
