@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/CiscoM31/godata/v2"
+	"github.com/CiscoM31/godata"
 )
 
 var testCases = []struct {

@@ -3,7 +3,7 @@ package mongo
 import (
 	"fmt"
 
-	"github.com/CiscoM31/godata/v2"
+	"github.com/CiscoM31/godata"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
