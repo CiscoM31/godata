@@ -30,18 +30,20 @@ func (p *ExpressionParser) ParseOrderByString(orderby string) (*GoDataOrderByQue
 
 	for _, v := range items {
 		v = strings.TrimSpace(v)
-		var order string = ASC
-		if i := strings.LastIndex(v, " "); i > 0 {
-			o := strings.ToLower(v[i+1:])
-			if o == ASC {
-				order = ASC
-			} else if o == DESC {
-				order = DESC
-			} else {
-				return nil, BadRequestError("Invalid sort directive. Must be 'asc' or 'desc'")
-			}
-			v = strings.TrimSpace(v[:i])
+		var order string
+		vLower := strings.ToLower(v)
+		if strings.HasSuffix(vLower, ASC) {
+			order = ASC
+		} else if strings.HasSuffix(vLower, DESC) {
+			order = DESC
 		}
+		if order == "" {
+			order = ASC // default order
+		} else {
+			v = v[:len(v)-len(order)]
+			v = strings.TrimSpace(v)
+		}
+
 		if tree, err := p.ParseExpressionString(v); err != nil {
 			switch e := err.(type) {
 			case *GoDataError:

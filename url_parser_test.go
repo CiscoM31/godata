@@ -383,13 +383,7 @@ func TestUnescapeStringTokens(t *testing.T) {
 				{Field: &Token{Value: "Title"}, Order: "desc"},
 			},
 		},
-		{
-			// Invalid sort directive
-			url:                "/Books?$filter=Description eq 'abc'&$orderby=Author ascending",
-			errRegex:           regexp.MustCompile("Invalid sort directive.*"),
-			expectedFilterTree: nil,
-			expectedOrderBy:    nil,
-		},
+
 		/*
 			TODO: this is not supported yet.
 			{
@@ -428,6 +422,17 @@ func TestUnescapeStringTokens(t *testing.T) {
 				{
 					Field: &Token{Value: "Tags(Key='Environment')/Value"},
 					Order: "desc",
+				},
+			},
+		},
+		{
+			url:                "/Product?$orderby=Tags(Key='Sku Number')/Value",
+			errRegex:           nil,
+			expectedFilterTree: nil,
+			expectedOrderBy: []OrderByItem{
+				{
+					Field: &Token{Value: "Tags(Key='Sku Number')/Value"},
+					Order: "asc",
 				},
 			},
 		},
@@ -483,7 +488,7 @@ func TestUnescapeStringTokens(t *testing.T) {
 
 			err = compareOrderBy(request.Query.OrderBy, testCase.expectedOrderBy)
 			if err != nil {
-				t.Errorf("orderby not match expected value. error: %s", err.Error())
+				t.Errorf("orderby does not match expected value. error: %s", err.Error())
 			}
 		}
 	}
