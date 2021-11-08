@@ -432,14 +432,16 @@ func TestUnescapeStringTokens(t *testing.T) {
 			},
 		},
 		{
-			url:                "/Product?$orderby=-Name",
-			errRegex:           regexp.MustCompile(".*Token '-Name' is invalid.*"),
+			// Disallow $orderby=+Name
+			// Query string uses %2B which is the escape for +. The + character is itself a url escape for space, see https://www.w3schools.com/tags/ref_urlencode.asp.
+			url:                "/Product?$orderby=%2BName",
+			errRegex:           regexp.MustCompile(".*Token '\\+Name' is invalid.*"),
 			expectedFilterTree: nil,
 			expectedOrderBy:    nil,
 		},
 		{
-			url:                "/Product?$orderby=+Name",
-			errRegex:           regexp.MustCompile(".*Token '+Name' is invalid.*"),
+			url:                "/Product?$orderby=-Name",
+			errRegex:           regexp.MustCompile(".*Token '-Name' is invalid.*"),
 			expectedFilterTree: nil,
 			expectedOrderBy:    nil,
 		},
