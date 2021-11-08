@@ -384,6 +384,15 @@ func TestUnescapeStringTokens(t *testing.T) {
 			},
 		},
 
+		{
+			url:                "/Products?$orderby=ProductDesc",
+			errRegex:           nil,
+			expectedFilterTree: nil,
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "ProductDesc"}, Order: "asc"},
+			},
+		},
+
 		/*
 			TODO: this is not supported yet.
 			{

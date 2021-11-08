@@ -32,9 +32,9 @@ func (p *ExpressionParser) ParseOrderByString(orderby string) (*GoDataOrderByQue
 		v = strings.TrimSpace(v)
 		var order string
 		vLower := strings.ToLower(v)
-		if strings.HasSuffix(vLower, ASC) {
+		if strings.HasSuffix(vLower, " "+ASC) {
 			order = ASC
-		} else if strings.HasSuffix(vLower, DESC) {
+		} else if strings.HasSuffix(vLower, " "+DESC) {
 			order = DESC
 		}
 		if order == "" {
