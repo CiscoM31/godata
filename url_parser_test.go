@@ -431,6 +431,18 @@ func TestUnescapeStringTokens(t *testing.T) {
 				},
 			},
 		},
+		{
+			url:                "/Product?$orderby=-Name",
+			errRegex:           regexp.MustCompile(".*Token '-Name' is invalid.*"),
+			expectedFilterTree: nil,
+			expectedOrderBy:    nil,
+		},
+		{
+			url:                "/Product?$orderby=+Name",
+			errRegex:           regexp.MustCompile(".*Token '+Name' is invalid.*"),
+			expectedFilterTree: nil,
+			expectedOrderBy:    nil,
+		},
 	}
 	for _, testCase := range testCases {
 		parsedUrl, err := url.Parse(testCase.url)
@@ -449,7 +461,7 @@ func TestUnescapeStringTokens(t *testing.T) {
 			t.Errorf("Test case '%s' failed. Expected error but obtained nil error", testCase.url)
 			continue
 		} else if err != nil && !testCase.errRegex.MatchString(err.Error()) {
-			t.Errorf("Test case '%s' failed. Obtained error %v does not match expected regex %v",
+			t.Errorf("Test case '%s' failed. Obtained error [%v] does not match expected regex [%v]",
 				testCase.url, err, testCase.errRegex)
 			continue
 		}
