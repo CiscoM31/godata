@@ -383,7 +383,38 @@ func TestUnescapeStringTokens(t *testing.T) {
 				{Field: &Token{Value: "Title"}, Order: "desc"},
 			},
 		},
-
+		{
+			url:                "/Products?$orderby=Asc",
+			errRegex:           nil,
+			expectedFilterTree: nil,
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Asc"}, Order: "asc"},
+			},
+		},
+		{
+			url:                "/Products?$orderby=Asc Asc",
+			errRegex:           nil,
+			expectedFilterTree: nil,
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Asc"}, Order: "asc"},
+			},
+		},
+		{
+			url:                "/Products?$orderby=Desc Asc",
+			errRegex:           nil,
+			expectedFilterTree: nil,
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Desc"}, Order: "asc"},
+			},
+		},
+		{
+			url:                "/Products?$orderby=Asc Desc",
+			errRegex:           nil,
+			expectedFilterTree: nil,
+			expectedOrderBy: []OrderByItem{
+				{Field: &Token{Value: "Asc"}, Order: "desc"},
+			},
+		},
 		{
 			url:                "/Products?$orderby=ProductDesc",
 			errRegex:           nil,
