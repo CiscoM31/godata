@@ -296,6 +296,13 @@ func TestInvalidExpressionSyntax(t *testing.T) {
 		"contains(LastName, 'Smith'),", // Extra comma after the function call
 		"contains(LastName, 'Smith',)", // Extra comma after the last argument
 		"contains(,LastName, 'Smith')", // Extra comma before the first argument
+		"eq eq eq",                     // Invalid sequence of operators
+		"not not",                      // Invalid sequence of operators
+		"true true",                    // Invalid sequence of booleans
+		"1 2 3",                        // Invalid sequence of numbers
+		"1.4 2.34 3.1415",              // Invalid sequence of numbers
+		"a b c",                        // Invalid sequence of literals.
+		"'a' 'b' 'c'",                  // Invalid sequence of strings.
 	}
 	p := NewExpressionParser()
 	p.ExpectBoolExpr = false
