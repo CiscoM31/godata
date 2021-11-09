@@ -1181,6 +1181,8 @@ var testCases = []struct {
 		},
 	},
 	{
+		// Because 'not' is right-associative, the expression below is the same as not (not true).
+		// If it were left-associative, it would be parsed as (not not) true, which is not a valid expression.
 		expression: "not not true",
 		tree: []expectedParseNode{
 			{Value: "not", Depth: 0, Type: ExpressionTokenLogical},
