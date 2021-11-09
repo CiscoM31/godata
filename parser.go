@@ -317,19 +317,33 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 	queue := tokenQueue{} // output queue in postfix
 	stack := tokenStack{} // Operator stack
 
+	previousTokenIsLiteral := false
+	var previousToken *Token = nil
+
+	incrementListArgCount := func(token *Token) {
+		if !stack.Empty() {
+			if previousToken != nil && previousToken.Value == TokenOpenParen {
+				stack.Head.listArgCount++
+			} else if stack.Head.Token.Value == TokenOpenParen {
+				stack.Head.listArgCount++
+			}
+		}
+	}
 	for len(tokens) > 0 {
 		token := tokens[0]
 		tokens = tokens[1:]
 		switch {
 		case p.isFunction(token):
+			previousTokenIsLiteral = false
 			if len(tokens) == 0 || tokens[0].Value != TokenOpenParen {
 				// A function token must be followed by open parenthesis token.
 				return nil, BadRequestError(fmt.Sprintf("Function '%s' must be followed by '('", token.Value))
 			}
-			stack.incrementListArgCount()
+			incrementListArgCount(token)
 			// push functions onto the stack
 			stack.Push(token)
 		case p.isOperator(token):
+			previousTokenIsLiteral = false
 			// push operators onto stack according to precedence
 			o1 := p.Operators[token.Value]
 			if !stack.Empty() {
@@ -345,10 +359,11 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 				}
 			}
 			if o1.Operands == 1 { // not, -
-				stack.incrementListArgCount()
+				incrementListArgCount(token)
 			}
 			stack.Push(token)
 		case token.Value == TokenOpenParen:
+			previousTokenIsLiteral = false
 			// In OData, the parenthesis tokens can be used:
 			// - As a parenExpr to set explicit precedence order, such as "(a + 2) x b"
 			//   These precedence tokens are removed while parsing the OData query.
@@ -356,10 +371,14 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 			//   The list tokens are retained while parsing the OData query.
 			//   ABNF grammar:
 			//   listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
-			stack.incrementListArgCount()
+			incrementListArgCount(token)
 			// Push open parens onto the stack
 			stack.Push(token)
 		case token.Value == TokenCloseParen:
+			previousTokenIsLiteral = false
+			if previousToken != nil && previousToken.Value == TokenComma {
+				return nil, fmt.Errorf("invalid token sequence: %s %s", previousToken.Value, token.Value)
+			}
 			// if we find a close paren, pop things off the stack
 			for !stack.Empty() {
 				if stack.Peek().Value == TokenOpenParen {
@@ -437,18 +456,6 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 			//           or should (1) be simplified to the integer 1, which is contained in the RHS?
 			//   1 in ( ('a', 'b', 'c'), (2), 1 )
 			//       ==> true. The number 1 is contained in the RHS list.
-			/*
-				switch {
-				case argCount <= 1:
-					if !isListExpr && len(tokens) > 0 {
-						if o1, ok := p.Operators[tokens[0].Value]; ok {
-							// The expression is the left operand of an operator that has a preference for listExpr vs parenExpr.
-							if o1.PreferListExpr {
-								isListExpr = true
-							}
-						}
-					}
-			*/
 			if isListExpr {
 				// The open parenthesis was a delimiter for a listExpr.
 				// Add a token indicating the number of arguments in the list.
@@ -467,6 +474,13 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 				queue.Enqueue(stack.Pop())
 			}
 		case token.Value == TokenComma:
+			previousTokenIsLiteral = false
+			if previousToken != nil {
+				switch previousToken.Value {
+				case TokenComma, TokenOpenParen:
+					return nil, fmt.Errorf("invalid token sequence: %s %s", previousToken.Value, token.Value)
+				}
+			}
 			// Function argument separator (",")
 			// Comma may be used as:
 			// 1. Separator of function parameters,
@@ -486,17 +500,23 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 			if stack.Peek().Value != TokenOpenParen {
 				panic("unexpected token")
 			}
+
 		default:
+			if previousTokenIsLiteral {
+				return nil, fmt.Errorf("invalid token sequence: %s %s", previousToken.Value, token.Value)
+			}
 			if token.Type == p.LiteralToken && len(tokens) > 0 && tokens[0].Value == TokenOpenParen {
 				// Literal followed by parenthesis ==> property collection navigation
 				// push property segment onto the stack
 				stack.Push(token)
 			} else {
 				// Token is a literal, number, string... -- put it in the queue
-				stack.incrementListArgCount()
 				queue.Enqueue(token)
 			}
+			incrementListArgCount(token)
+			previousTokenIsLiteral = true
 		}
+		previousToken = token
 	}
 
 	// pop off the remaining operators onto the queue
@@ -514,6 +534,9 @@ func (p *Parser) PostfixToTree(queue *tokenQueue) (*ParseNode, error) {
 	stack := &nodeStack{}
 	currNode := &ParseNode{}
 
+	if queue == nil {
+		return nil, errors.New("input queue is nil")
+	}
 	t := queue.Head
 	for t != nil {
 		t = t.Next
@@ -665,12 +688,6 @@ func (s *tokenStack) Empty() bool {
 	return s.Head == nil
 }
 
-func (s *tokenStack) incrementListArgCount() {
-	if !s.Empty() && s.Head.Token.Value == TokenOpenParen {
-		s.Head.listArgCount++
-	}
-}
-
 func (s *tokenStack) getArgCount() int {
 	return s.Head.listArgCount
 }
@@ -679,7 +696,7 @@ func (s *tokenStack) String() string {
 	output := ""
 	currNode := s.Head
 	for currNode != nil {
-		output += " " + currNode.Token.Value
+		output = currNode.Token.Value + " " + output
 		currNode = currNode.Prev
 	}
 	return output
@@ -731,7 +748,7 @@ func (q *tokenQueue) String() string {
 	var sb strings.Builder
 	node := q.Head
 	for node != nil {
-		sb.WriteString(fmt.Sprintf("%s[%d]", node.Token.Value, node.Token.Type))
+		sb.WriteString(fmt.Sprintf("%s[%v]", node.Token.Value, node.Token.Type))
 		node = node.Next
 		if node != nil {
 			sb.WriteRune(' ')

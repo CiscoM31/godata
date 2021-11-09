@@ -237,9 +237,9 @@ func TestTree(t *testing.T) {
 
 	// 2 3 max 3 / 3.1415 * sin
 	result, err := parser.InfixToPostfix(tokens)
-
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	root, err := parser.PostfixToTree(result)

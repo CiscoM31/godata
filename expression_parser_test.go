@@ -289,6 +289,13 @@ func TestInvalidExpressionSyntax(t *testing.T) {
 		"(a, b, )",                     // This is not a list.
 		"(a, , b)",                     // This is not a list.
 		"(, a, b)",                     // This is not a list.
+		"(a, not b c)",                 // Missing comma between (not b) and (c)
+		",",                            // A comma by itself is not an expression
+		",,,",                          // A comma by itself is not an expression
+		"(,)",                          // A comma by itself is not an expression
+		"contains(LastName, 'Smith'),", // Extra comma after the function call
+		"contains(LastName, 'Smith',)", // Extra comma after the last argument
+		"contains(,LastName, 'Smith')", // Extra comma before the first argument
 	}
 	p := NewExpressionParser()
 	p.ExpectBoolExpr = false
@@ -339,7 +346,10 @@ func CompareTokens(expected, actual []*Token) (bool, error) {
 	return true, nil
 }
 
-func CompareQueue(expect []*Token, b *tokenQueue) (bool, error) {
+func CompareQueue(expect []*Token, b *tokenQueue) error {
+	if b == nil {
+		return fmt.Errorf("Got nil token queue")
+	}
 	bl := func() int {
 		if b.Empty() {
 			return 0
@@ -351,22 +361,22 @@ func CompareQueue(expect []*Token, b *tokenQueue) (bool, error) {
 		return l
 	}()
 	if len(expect) != bl {
-		return false, fmt.Errorf("Postfix queue unexpected length. Got len=%d, expected %d. queue=%v",
+		return fmt.Errorf("Postfix queue unexpected length. Got len=%d, expected %d. queue=%v",
 			bl, len(expect), b)
 	}
 	node := b.Head
 	for i := range expect {
 		if expect[i].Type != node.Token.Type {
-			return false, fmt.Errorf("Postfix token types at index %d. Got: %v, expected: %v. Expected value: %v",
+			return fmt.Errorf("Postfix token types at index %d. Got: %v, expected: %v. Expected value: %v",
 				i, node.Token.Type, expect[i].Type, expect[i].Value)
 		}
 		if expect[i].Value != node.Token.Value {
-			return false, fmt.Errorf("Postfix token values at index %d. Got: %v, expected: %v",
+			return fmt.Errorf("Postfix token values at index %d. Got: %v, expected: %v",
 				i, node.Token.Value, expect[i].Value)
 		}
 		node = node.Next
 	}
-	return true, nil
+	return nil
 }
 
 func printTokens(tokens []*Token) {
@@ -384,7 +394,11 @@ func CompareTree(node *ParseNode, expect []expectedParseNode, pos *int, level in
 		return fmt.Errorf("Unexpected token at pos %d. Got %s, expected no value",
 			*pos, node.Token.Value)
 	}
-	if node.Token.Value != expect[*pos].Value {
+	if node == nil {
+		return fmt.Errorf("Node should not be nil")
+	}
+	if node.Token.Value !=
+		expect[*pos].Value {
 		return fmt.Errorf("Unexpected token at pos %d. Got %s -> %d, expected: %s -> %d",
 			*pos, node.Token.Value, level, expect[*pos].Value, expect[*pos].Depth)
 	}
@@ -430,7 +444,7 @@ func TestExpressions(t *testing.T) {
 			continue
 		}
 		if testCase.postfixTokens != nil {
-			if result, err := CompareQueue(testCase.postfixTokens, output); !result {
+			if err := CompareQueue(testCase.postfixTokens, output); err != nil {
 				t.Errorf("Unexpected postfix tokens: %v", err)
 				continue
 			}
