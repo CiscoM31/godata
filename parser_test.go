@@ -238,14 +238,12 @@ func TestTree(t *testing.T) {
 	// 2 3 max 3 / 3.1415 * sin
 	result, err := parser.InfixToPostfix(tokens)
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
 
 	root, err := parser.PostfixToTree(result)
 	if err != nil {
-		t.Errorf("Error parsing query: %v", err)
-		return
+		t.Fatalf("Error parsing query: %v", err)
 	}
 	if root.Token.Value != "sin" {
 		t.Error("Root node is not sin")
