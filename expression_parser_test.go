@@ -286,6 +286,9 @@ func TestInvalidExpressionSyntax(t *testing.T) {
 		"(numCore neq 12)",             // Invalid operator. It should be 'ne'
 		"numCore neq 12",               // Invalid operator. It should be 'ne'
 		"(a b c d e)",                  // This is not a list.
+		"(a, b, )",                     // This is not a list.
+		"(a, , b)",                     // This is not a list.
+		"(, a, b)",                     // This is not a list.
 	}
 	p := NewExpressionParser()
 	p.ExpectBoolExpr = false
