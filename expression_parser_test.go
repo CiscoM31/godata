@@ -268,6 +268,8 @@ func TestInvalidExpressionSyntax(t *testing.T) {
 		"contains(LastName, 'Smith'",   // Missing closing parenthesis
 		"contains LastName, 'Smith')",  // Missing open parenthesis
 		"City eq 'Dallas' 'Houston'",   // extraneous string value
+		"(numCore neq 12)",
+		"numCore neq 12",
 		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
 	}
 	p := NewExpressionParser()
