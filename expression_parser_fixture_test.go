@@ -1180,4 +1180,32 @@ var testCases = []struct {
 			{Value: "'abc123'", Depth: 2, Type: ExpressionTokenString},
 		},
 	},
+	{
+		expression: "not not true",
+		tree: []expectedParseNode{
+			{Value: "not", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "not", Depth: 1, Type: ExpressionTokenLogical},
+			{Value: "true", Depth: 2, Type: ExpressionTokenBoolean},
+		},
+	},
+	{
+		// duration      = [ "duration" ] SQUOTE durationValue SQUOTE
+		expression: "TaskDuration eq duration'P12DT23H59M59.999999999999S'",
+		tree: []expectedParseNode{
+			{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "TaskDuration", Depth: 1, Type: ExpressionTokenLiteral},
+			{Value: "P12DT23H59M59.999999999999S", Depth: 1, Type: ExpressionTokenDuration},
+		},
+	},
+	{
+		expression: "totalseconds(EndTime sub StartTime) lt duration'PT23H59M'",
+		tree: []expectedParseNode{
+			{Value: "lt", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "totalseconds", Depth: 1, Type: ExpressionTokenFunc},
+			{Value: "sub", Depth: 2, Type: ExpressionTokenOp},
+			{Value: "EndTime", Depth: 3, Type: ExpressionTokenLiteral},
+			{Value: "StartTime", Depth: 3, Type: ExpressionTokenLiteral},
+			{Value: "PT23H59M", Depth: 1, Type: ExpressionTokenDuration},
+		},
+	},
 }

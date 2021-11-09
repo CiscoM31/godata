@@ -266,7 +266,7 @@ func NewExpressionParser() *ExpressionParser {
 	// City in ('Seattle') needs to be interpreted as a list expression, not a paren expression.
 	parser.DefineOperator("in", 2, OpAssociationLeft, 8).WithListExprPreference(true)
 	parser.DefineOperator("-", 1, OpAssociationNone, 7)
-	parser.DefineOperator("not", 1, OpAssociationLeft, 7)
+	parser.DefineOperator("not", 1, OpAssociationRight, 7)
 	parser.DefineOperator("cast", 2, OpAssociationNone, 7)
 	parser.DefineOperator("mul", 2, OpAssociationNone, 6)
 	parser.DefineOperator("div", 2, OpAssociationNone, 6)   // Division
@@ -282,7 +282,7 @@ func NewExpressionParser() *ExpressionParser {
 	parser.DefineOperator("ne", 2, OpAssociationLeft, 3)
 	parser.DefineOperator("and", 2, OpAssociationLeft, 2)
 	parser.DefineOperator("or", 2, OpAssociationLeft, 1)
-	parser.DefineOperator("=", 2, OpAssociationLeft, 0) // Function argument assignment. E.g. MyFunc(Arg1='abc')
+	parser.DefineOperator("=", 2, OpAssociationRight, 0) // Function argument assignment. E.g. MyFunc(Arg1='abc')
 	parser.DefineFunction("contains", []int{2})
 	parser.DefineFunction("endswith", []int{2})
 	parser.DefineFunction("startswith", []int{2})

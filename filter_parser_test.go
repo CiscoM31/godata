@@ -1142,7 +1142,7 @@ func TestValidFilterSyntax(t *testing.T) {
 		"date(StartTime) ne date(EndTime)",
 		"totaloffsetminutes(StartTime) eq 60",
 		"StartTime eq mindatetime()",
-		// "totalseconds(EndTime sub StartTime) lt duration'PT23H59'", // TODO The totalseconds function returns the duration of the value in total seconds, including fractional seconds.
+		"totalseconds(EndTime sub StartTime) lt duration'PT23H59M'", // TODO The totalseconds function returns the duration of the value in total seconds, including fractional seconds.
 		"EndTime eq maxdatetime()",
 		"time(StartTime) le StartOfDay",
 		"time('2015-10-14T23:30:00.104+02:00') lt now()",

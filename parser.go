@@ -272,7 +272,8 @@ func (p *Parser) WithLiteralToken(token TokenType) *Parser {
 	return p
 }
 
-// DefineOperator adds an operator to the language. Provide the token, the expected number of arguments,
+// DefineOperator adds an operator to the language.
+// Provide the token, the expected number of arguments,
 // whether the operator is left, right, or not associative, and a precedence.
 func (p *Parser) DefineOperator(token string, operands, assoc, precedence int) *Operator {
 	op := &Operator{
@@ -348,8 +349,8 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 			o1 := p.Operators[token.Value]
 			if !stack.Empty() {
 				for o2, ok := p.Operators[stack.Peek().Value]; ok &&
-					(o1.Association == OpAssociationLeft && o1.Precedence <= o2.Precedence) ||
-					(o1.Association == OpAssociationRight && o1.Precedence < o2.Precedence); {
+					((o1.Association == OpAssociationLeft && o1.Precedence <= o2.Precedence) ||
+						(o1.Association == OpAssociationRight && o1.Precedence < o2.Precedence)); {
 					queue.Enqueue(stack.Pop())
 
 					if stack.Empty() {

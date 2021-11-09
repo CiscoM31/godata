@@ -2,6 +2,7 @@ package godata
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -68,7 +69,10 @@ func TestValidBooleanExpressionSyntax(t *testing.T) {
 		"not true",
 		"not false",
 		"not (not true)",
-		//"not not true", // TODO: I think this should work. 'not not true' is true
+		// TODO: this should work because 'not' is inherently right-associative.
+		// I.e. it should be interpreted as not (not true)
+		// If it were left-associative, it would be interpreted as (not not) true, which is invalid.
+		"not not true",
 		// String functions
 		"contains(CompanyName,'freds')",
 		"endswith(CompanyName,'Futterkiste')",
@@ -85,12 +89,12 @@ func TestValidBooleanExpressionSyntax(t *testing.T) {
 		"trim(CompanyName) eq 'Alfreds Futterkiste'",
 		"concat(concat(City,', '), Country) eq 'Berlin, Germany'",
 		// GUID
-		"GuidValue eq 01234567-89ab-cdef-0123-456789abcdef", // TODO According to ODATA ABNF notation, GUID values do not have quotes.
+		"GuidValue eq 01234567-89ab-cdef-0123-456789abcdef", // According to ODATA ABNF notation, GUID values do not have quotes.
 		// Date and Time functions
 		"StartDate eq 2012-12-03",
 		"DateTimeOffsetValue eq 2012-12-03T07:16:23Z",
 		// duration      = [ "duration" ] SQUOTE durationValue SQUOTE
-		// "DurationValue eq duration'P12DT23H59M59.999999999999S'", // TODO See ODATA ABNF notation
+		"DurationValue eq duration'P12DT23H59M59.999999999999S'", // See ODATA ABNF notation
 		"TimeOfDayValue eq 07:59:59.999",
 		"year(BirthDate) eq 0",
 		"month(BirthDate) eq 12",
@@ -106,7 +110,7 @@ func TestValidBooleanExpressionSyntax(t *testing.T) {
 		"date(StartTime) ne date(EndTime)",
 		"totaloffsetminutes(StartTime) eq 60",
 		"StartTime eq mindatetime()",
-		// "totalseconds(EndTime sub StartTime) lt duration'PT23H59'", // TODO The totalseconds function returns the duration of the value in total seconds, including fractional seconds.
+		"totalseconds(EndTime sub StartTime) lt duration'PT23H59M'", // The totalseconds function returns the duration of the value in total seconds, including fractional seconds.
 		"EndTime eq maxdatetime()",
 		"time(StartTime) le StartOfDay",
 		"time('2015-10-14T23:30:00.104+02:00') lt now()",
@@ -199,17 +203,16 @@ func TestValidBooleanExpressionSyntax(t *testing.T) {
 	p := NewExpressionParser()
 	p.ExpectBoolExpr = true
 	for _, input := range queries {
+		t.Logf("Testing expression %s", input)
 		q, err := p.ParseExpressionString(input)
 		if err != nil {
 			t.Errorf("Error parsing query '%s'. Error: %v", input, err)
 		} else {
 			if q.Tree == nil {
 				t.Errorf("Error parsing query '%s'. Tree is nil", input)
-			}
-			if q.Tree.Token == nil {
+			} else if q.Tree.Token == nil {
 				t.Errorf("Error parsing query '%s'. Root token is nil", input)
-			}
-			if q.Tree.Token.Type == ExpressionTokenLiteral {
+			} else if q.Tree.Token.Type == ExpressionTokenLiteral {
 				t.Errorf("Error parsing query '%s'. Unexpected root token type: %+v", input, q.Tree.Token)
 			}
 		}
@@ -220,8 +223,8 @@ func TestValidBooleanExpressionSyntax(t *testing.T) {
 // The URLs below are not valid ODATA syntax, the parser should return an error.
 func TestInvalidBooleanExpressionSyntax(t *testing.T) {
 	queries := []string{
-		"(TRUE)",
-		"(City)",
+		"(TRUE)",  // Should be true lowercase
+		"(City)",  // The literal City is not boolean
 		"12345",   // Number 12345 is not a boolean expression
 		"0",       // Number 0 is not a boolean expression
 		"'123'",   // String '123' is not a boolean expression
@@ -231,9 +234,8 @@ func TestInvalidBooleanExpressionSyntax(t *testing.T) {
 		"no",      // yes is not a boolean expression, though it's a literal value
 		"add 2 3", // Missing operands
 		"City",    // Just a single literal
-		// TODO: the query below should fail.
-		//"Tags/any(var:var/Key eq 'Site') orTags/any(var:var/Key eq 'Site')",
-		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
+		"Tags/any(var:var/Key eq 'Site') orTags/any(var:var/Key eq 'Site')",
+		"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
 	}
 	p := NewExpressionParser()
 	p.ExpectBoolExpr = true
@@ -468,4 +470,55 @@ func TestExpressions(t *testing.T) {
 		}
 	}
 
+}
+func TestDuration(t *testing.T) {
+	testCases := []struct {
+		value string
+		valid bool
+	}{
+		{value: "duration'P12DT23H59M59.999999999999S'", valid: true},
+		// three years, six months, four days, twelve hours, thirty minutes, and five seconds
+		{value: "duration'P3Y6M4DT12H30M5S'", valid: true},
+		// Date and time elements including their designator may be omitted if their value is zero,
+		// and lower-order elements may also be omitted for reduced precision.
+		{value: "duration'P23DT23H'", valid: true},
+		{value: "duration'P4Y'", valid: true},
+		// However, at least one element must be present,
+		// thus "P" is not a valid representation for a duration of 0 seconds.
+		{value: "duration'P'", valid: false},
+		// "PT0S" or "P0D", however, are both valid and represent the same duration.
+		{value: "duration'PT0S'", valid: true},
+		{value: "duration'P0D'", valid: true},
+		// To resolve ambiguity, "P1M" is a one-month duration and "PT1M" is a one-minute duration
+		{value: "duration'P1M'", valid: true},
+		{value: "duration'PT1M'", valid: true},
+		// The standard does not prohibit date and time values in a duration representation
+		// from exceeding their "carry over points" except as noted below.
+		// Thus, "PT36H" could be used as well as "P1DT12H" for representing the same duration.
+		{value: "duration'PT36H'", valid: true},
+		{value: "duration'P1DT12H'", valid: true},
+		{value: "duration'PT23H59M'", valid: true},
+		{value: "duration'PT23H59'", valid: false}, // missing units
+
+		{value: "duration'H0D'", valid: false},
+		{value: "foo", valid: false},
+
+		// TODO: the duration values below should be valid
+		// The smallest value used may also have a decimal fraction,[35] as in "P0.5Y" to indicate half a year.
+		{value: "duration'P0.5Y'", valid: false}, // half a year
+		{value: "duration'P0.5M'", valid: false}, // half a month
+		// This decimal fraction may be specified with either a comma or a full stop, as in "P0,5Y" or "P0.5Y".
+		{value: "duration'P0,5Y'", valid: false},
+	}
+	re, err := regexp.Compile(tokenDurationRe)
+	if err != nil {
+		t.Fatalf("Invalid regex: %v", err)
+	}
+	for _, testCase := range testCases {
+		m := re.MatchString(testCase.value)
+		if m != testCase.valid {
+			t.Errorf("Value: %s. Expected regex match: %v, got %v",
+				testCase.value, testCase.valid, m)
+		}
+	}
 }
