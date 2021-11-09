@@ -480,7 +480,7 @@ func TestUnescapeStringTokens(t *testing.T) {
 			// Disallow $orderby=+Name
 			// Query string uses %2B which is the escape for +. The + character is itself a url escape for space, see https://www.w3schools.com/tags/ref_urlencode.asp.
 			url:                "/Product?$orderby=%2BName",
-			errRegex:           regexp.MustCompile(".*Token '\\+Name' is invalid.*"),
+			errRegex:           regexp.MustCompile(`.*Token '\+Name' is invalid.*`),
 			expectedFilterTree: nil,
 			expectedOrderBy:    nil,
 		},
