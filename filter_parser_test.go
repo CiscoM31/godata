@@ -1309,6 +1309,7 @@ func TestInvalidFilterSyntax(t *testing.T) {
 		"contains LastName, 'Smith')",  // Missing open parenthesis
 		"City eq 'Dallas' 'Houston'",   // extraneous string value
 		"(numCore neq 12)",             // Invalid operator. It should be 'ne'
+		"(a b c d)",                    // Invalid list
 		"numCore neq 12",               // Invalid operator. It should be 'ne'
 		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
 	}
@@ -1317,7 +1318,6 @@ func TestInvalidFilterSyntax(t *testing.T) {
 		if err == nil {
 			// The parser has incorrectly determined the syntax is valid.
 			t.Errorf("The query '$filter=%s' is not valid ODATA syntax. The ODATA parser should return an error. Tree:\n%v", input, q.Tree)
-			return
 		}
 	}
 }

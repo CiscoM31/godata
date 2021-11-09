@@ -218,29 +218,46 @@ func TestValidBooleanExpressionSyntax(t *testing.T) {
 }
 
 // The URLs below are not valid ODATA syntax, the parser should return an error.
+func TestInvalidBooleanExpressionSyntax(t *testing.T) {
+	queries := []string{
+		"(TRUE)",
+		"(City)",
+		"12345",   // Number 12345 is not a boolean expression
+		"0",       // Number 0 is not a boolean expression
+		"'123'",   // String '123' is not a boolean expression
+		"TRUE",    // Should be 'true' lowercase
+		"FALSE",   // Should be 'false' lowercase
+		"yes",     // yes is not a boolean expression, though it's a literal value
+		"no",      // yes is not a boolean expression, though it's a literal value
+		"add 2 3", // Missing operands
+		"City",    // Just a single literal
+		// TODO: the query below should fail.
+		//"Tags/any(var:var/Key eq 'Site') orTags/any(var:var/Key eq 'Site')",
+		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
+	}
+	p := NewExpressionParser()
+	p.ExpectBoolExpr = true
+	for _, input := range queries {
+		q, err := p.ParseExpressionString(input)
+		if err == nil {
+			// The parser has incorrectly determined the syntax is valid.
+			t.Errorf("The expression '%s' is not valid ODATA syntax. The ODATA parser should return an error. Tree:\n%v", input, q.Tree)
+		}
+	}
+}
+
 func TestInvalidExpressionSyntax(t *testing.T) {
 	queries := []string{
 		"()", // It's not a boolean expression
-		"(TRUE)",
-		"(City)",
 		"(",
 		"((((",
 		")",
-		"12345",                                // Number 12345 is not a boolean expression
-		"0",                                    // Number 0 is not a boolean expression
-		"'123'",                                // String '123' is not a boolean expression
-		"TRUE",                                 // Should be 'true' lowercase
-		"FALSE",                                // Should be 'false' lowercase
-		"yes",                                  // yes is not a boolean expression
-		"no",                                   // yes is not a boolean expression
 		"",                                     // Empty string.
 		"eq",                                   // Just a single logical operator
 		"and",                                  // Just a single logical operator
 		"add",                                  // Just a single arithmetic operator
 		"add ",                                 // Just a single arithmetic operator
 		"add 2",                                // Missing operands
-		"add 2 3",                              // Missing operands
-		"City",                                 // Just a single literal
 		"City City City City",                  // Sequence of literals
 		"City eq",                              // Missing operand
 		"City eq (",                            // Wrong operand
@@ -255,8 +272,6 @@ func TestInvalidExpressionSyntax(t *testing.T) {
 		"not (City eq 'Dallas'))",              // Extraneous closing parenthesis
 		"not City eq 'Dallas')",                // Missing open parenthesis
 		"City eq 'Dallas' orCity eq 'Houston'", // missing space between or and City
-		// TODO: the query below should fail.
-		//"Tags/any(var:var/Key eq 'Site') orTags/any(var:var/Key eq 'Site')",
 		"not (City eq 'Dallas') and Name eq 'Houston')",
 		"Tags/all()",                   // The all operator cannot be used without an argument expression.
 		"LastName contains 'Smith'",    // Previously the godata library was not returning an error.
@@ -270,11 +285,12 @@ func TestInvalidExpressionSyntax(t *testing.T) {
 		"City eq 'Dallas' 'Houston'",   // extraneous string value
 		"(numCore neq 12)",             // Invalid operator. It should be 'ne'
 		"numCore neq 12",               // Invalid operator. It should be 'ne'
-		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
+		"(a b c d e)",                  // This is not a list.
 	}
 	p := NewExpressionParser()
-	p.ExpectBoolExpr = true
+	p.ExpectBoolExpr = false
 	for _, input := range queries {
+		t.Logf("testing: %s", input)
 		q, err := p.ParseExpressionString(input)
 		if err == nil {
 			// The parser has incorrectly determined the syntax is valid.

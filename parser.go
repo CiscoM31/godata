@@ -492,7 +492,7 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 				// push property segment onto the stack
 				stack.Push(token)
 			} else {
-				// Token is a literal -- put it in the queue
+				// Token is a literal, number, string... -- put it in the queue
 				stack.incrementListArgCount()
 				queue.Enqueue(token)
 			}
