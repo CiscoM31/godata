@@ -331,6 +331,11 @@ func (p *Parser) InfixToPostfix(ctx context.Context, tokens []*Token) (*tokenQue
 			}
 		}
 	}
+	cfg, hasComplianceConfig := ctx.Value(odataCompliance).(OdataComplianceConfig)
+	if !hasComplianceConfig {
+		// Strict ODATA compliance by default.
+		cfg = ComplianceStrict
+	}
 	for len(tokens) > 0 {
 		token := tokens[0]
 		tokens = tokens[1:]
@@ -379,7 +384,9 @@ func (p *Parser) InfixToPostfix(ctx context.Context, tokens []*Token) (*tokenQue
 		case token.Value == TokenCloseParen:
 			previousTokenIsLiteral = false
 			if previousToken != nil && previousToken.Value == TokenComma {
-				return nil, fmt.Errorf("invalid token sequence: %s %s", previousToken.Value, token.Value)
+				if cfg&ComplianceIgnoreInvalidComma == 0 {
+					return nil, fmt.Errorf("invalid token sequence: %s %s", previousToken.Value, token.Value)
+				}
 			}
 			// if we find a close paren, pop things off the stack
 			for !stack.Empty() {

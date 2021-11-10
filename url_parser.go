@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-func NewGoDataRequest() *GoDataRequest {
-	return &GoDataRequest{}
-}
-
 // Parse a request from the HTTP server and format it into a GoDaataRequest type
 // to be passed to a provider to produce a result.
 func ParseRequest(ctx context.Context, path string, query url.Values) (*GoDataRequest, error) {
