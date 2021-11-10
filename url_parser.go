@@ -13,7 +13,7 @@ func NewGoDataRequest() *GoDataRequest {
 
 // Parse a request from the HTTP server and format it into a GoDaataRequest type
 // to be passed to a provider to produce a result.
-func ParseRequest(ctx context.Context, path string, query url.Values, lenient bool) (*GoDataRequest, error) {
+func ParseRequest(ctx context.Context, path string, query url.Values) (*GoDataRequest, error) {
 	r := &GoDataRequest{
 		RequestKind: RequestKindUnknown,
 	}
@@ -21,7 +21,7 @@ func ParseRequest(ctx context.Context, path string, query url.Values, lenient bo
 	if err := r.ParseUrlPath(path); err != nil {
 		return nil, err
 	}
-	if err := r.ParseUrlQuery(ctx, query, lenient); err != nil {
+	if err := r.ParseUrlQuery(ctx, query); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -29,77 +29,77 @@ func ParseRequest(ctx context.Context, path string, query url.Values, lenient bo
 
 // Compare a request to a given service, and validate the semantics and update
 // the request with semantics included
-func (r *GoDataRequest) SemanticizeRequest(service *GoDataService) error {
+func (req *GoDataRequest) SemanticizeRequest(service *GoDataService) error {
 
 	// if request kind is a resource
-	for segment := r.FirstSegment; segment != nil; segment = segment.Next {
+	for segment := req.FirstSegment; segment != nil; segment = segment.Next {
 		err := SemanticizePathSegment(segment, service)
 		if err != nil {
 			return err
 		}
 	}
 
-	switch r.LastSegment.SemanticReference.(type) {
+	switch req.LastSegment.SemanticReference.(type) {
 	case *GoDataEntitySet:
-		entitySet := r.LastSegment.SemanticReference.(*GoDataEntitySet)
+		entitySet := req.LastSegment.SemanticReference.(*GoDataEntitySet)
 		entityType, err := service.LookupEntityType(entitySet.EntityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeFilterQuery(r.Query.Filter, service, entityType)
+		err = SemanticizeFilterQuery(req.Query.Filter, service, entityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeExpandQuery(r.Query.Expand, service, entityType)
+		err = SemanticizeExpandQuery(req.Query.Expand, service, entityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeSelectQuery(r.Query.Select, service, entityType)
+		err = SemanticizeSelectQuery(req.Query.Select, service, entityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeOrderByQuery(r.Query.OrderBy, service, entityType)
+		err = SemanticizeOrderByQuery(req.Query.OrderBy, service, entityType)
 		if err != nil {
 			return err
 		}
 		// TODO: disallow invalid query params
 	case *GoDataEntityType:
-		entityType := r.LastSegment.SemanticReference.(*GoDataEntityType)
-		if err := SemanticizeExpandQuery(r.Query.Expand, service, entityType); err != nil {
+		entityType := req.LastSegment.SemanticReference.(*GoDataEntityType)
+		if err := SemanticizeExpandQuery(req.Query.Expand, service, entityType); err != nil {
 			return err
 		}
-		if err := SemanticizeSelectQuery(r.Query.Select, service, entityType); err != nil {
+		if err := SemanticizeSelectQuery(req.Query.Select, service, entityType); err != nil {
 			return err
 		}
 	}
 
-	if r.LastSegment.SemanticType == SemanticTypeMetadata {
-		r.RequestKind = RequestKindMetadata
-	} else if r.LastSegment.SemanticType == SemanticTypeRef {
-		r.RequestKind = RequestKindRef
-	} else if r.LastSegment.SemanticType == SemanticTypeEntitySet {
-		if r.LastSegment.Identifier == nil {
-			r.RequestKind = RequestKindCollection
+	if req.LastSegment.SemanticType == SemanticTypeMetadata {
+		req.RequestKind = RequestKindMetadata
+	} else if req.LastSegment.SemanticType == SemanticTypeRef {
+		req.RequestKind = RequestKindRef
+	} else if req.LastSegment.SemanticType == SemanticTypeEntitySet {
+		if req.LastSegment.Identifier == nil {
+			req.RequestKind = RequestKindCollection
 		} else {
-			r.RequestKind = RequestKindEntity
+			req.RequestKind = RequestKindEntity
 		}
-	} else if r.LastSegment.SemanticType == SemanticTypeCount {
-		r.RequestKind = RequestKindCount
-	} else if r.FirstSegment == nil && r.LastSegment == nil {
-		r.RequestKind = RequestKindService
+	} else if req.LastSegment.SemanticType == SemanticTypeCount {
+		req.RequestKind = RequestKindCount
+	} else if req.FirstSegment == nil && req.LastSegment == nil {
+		req.RequestKind = RequestKindService
 	}
 
 	return nil
 }
 
-func (r *GoDataRequest) ParseUrlPath(path string) error {
+func (req *GoDataRequest) ParseUrlPath(path string) error {
 	parts := strings.Split(path, "/")
-	r.FirstSegment = &GoDataSegment{
+	req.FirstSegment = &GoDataSegment{
 		RawValue:   parts[0],
 		Name:       ParseName(parts[0]),
 		Identifier: ParseIdentifiers(parts[0]),
 	}
-	currSegment := r.FirstSegment
+	currSegment := req.FirstSegment
 	for _, v := range parts[1:] {
 		temp := &GoDataSegment{
 			RawValue:   v,
@@ -110,7 +110,7 @@ func (r *GoDataRequest) ParseUrlPath(path string) error {
 		currSegment.Next = temp
 		currSegment = temp
 	}
-	r.LastSegment = currSegment
+	req.LastSegment = currSegment
 
 	return nil
 }
@@ -230,22 +230,50 @@ var supportedOdataKeywords = map[string]bool{
 	"tags":         true,
 }
 
-// If lenient is true, the following logic is applied. If lenient is false, return an error:
-// - Allow duplicate ODATA keywords in the URL query.
-// - Ignore unknown ODATA keywords in the URL query.
-// - Allow extraneous comma as the last character in a list of function arguments.
-func (r *GoDataRequest) ParseUrlQuery(ctx context.Context, query url.Values, lenient bool) error {
-	if !lenient {
-		// Validate each query parameter is a valid ODATA keyword.
-		for key, val := range query {
-			if _, ok := supportedOdataKeywords[key]; !ok {
-				return BadRequestError(fmt.Sprintf("Query parameter '%s' is not supported", key)).
-					SetCause(&UnsupportedQueryParameterError{key})
-			}
-			if len(val) > 1 {
-				return BadRequestError(fmt.Sprintf("Query parameter '%s' cannot be specified more than once", key)).
-					SetCause(&DuplicateQueryParameterError{key})
-			}
+type OdataComplianceConfig int
+
+const (
+	ComplianceStrict OdataComplianceConfig = 0
+	// Ingore duplicate ODATA keywords in the URL query.
+	ComplianceIgnoreDuplicateKeywords OdataComplianceConfig = 1 << iota
+	// Ignore unknown ODATA keywords in the URL query.
+	ComplianceIgnoreUnknownKeywords
+	// Ingore extraneous comma as the last character in a list of function arguments.
+	ComplianceIgnoreInvalidComma
+	ComplianceIgnoreAll OdataComplianceConfig = ComplianceIgnoreDuplicateKeywords |
+		ComplianceIgnoreUnknownKeywords |
+		ComplianceIgnoreInvalidComma
+)
+
+type parserConfigKey int
+
+const (
+	odataCompliance parserConfigKey = iota
+)
+
+// If the lenient mode is set, the 'failOnConfig' bits are used to determine the ODATA compliance.
+// This is mostly for historical reasons because the original parser had compliance issues.
+// If the lenient mode is not set, the parser returns an error.
+func WithOdataComplianceConfig(ctx context.Context, cfg OdataComplianceConfig) context.Context {
+	return context.WithValue(ctx, odataCompliance, cfg)
+}
+
+// ParseUrlQuery parses the URL query, applying optional logic specified in the context.
+func (req *GoDataRequest) ParseUrlQuery(ctx context.Context, query url.Values) error {
+	cfg, hasComplianceConfig := ctx.Value(odataCompliance).(OdataComplianceConfig)
+	if !hasComplianceConfig {
+		// Strict ODATA compliance by default.
+		cfg = ComplianceStrict
+	}
+	// Validate each query parameter is a valid ODATA keyword.
+	for key, val := range query {
+		if _, ok := supportedOdataKeywords[key]; !ok && (cfg&ComplianceIgnoreUnknownKeywords == 0) {
+			return BadRequestError(fmt.Sprintf("Query parameter '%s' is not supported", key)).
+				SetCause(&UnsupportedQueryParameterError{key})
+		}
+		if (cfg&ComplianceIgnoreDuplicateKeywords == 0) && (len(val) > 1) {
+			return BadRequestError(fmt.Sprintf("Query parameter '%s' cannot be specified more than once", key)).
+				SetCause(&DuplicateQueryParameterError{key})
 		}
 	}
 	filter := query.Get("$filter")
@@ -342,7 +370,7 @@ func (r *GoDataRequest) ParseUrlQuery(ctx context.Context, query url.Values, len
 	if err != nil {
 		return err
 	}
-	r.Query = result
+	req.Query = result
 	return err
 }
 

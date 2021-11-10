@@ -7,6 +7,7 @@ import (
 )
 
 func TestFilterDateTime(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	tokens := map[string]TokenType{
 		"2011-08-29T21:58Z":             ExpressionTokenDateTime,
@@ -33,7 +34,7 @@ func TestFilterDateTime(t *testing.T) {
 			{Value: "gt", Type: ExpressionTokenLogical},
 			{Value: tokenValue, Type: tokenType},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Errorf("Failed to tokenize input %s. Error: %v", input, err)
 		}
@@ -50,6 +51,7 @@ func TestFilterDateTime(t *testing.T) {
 }
 
 func TestFilterAnyArrayOfObjects(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "Tags/any(d:d/Key eq 'Site' and d/Value lt 10)"
 	expect := []*Token{
@@ -72,7 +74,7 @@ func TestFilterAnyArrayOfObjects(t *testing.T) {
 		{Value: "10", Type: ExpressionTokenInteger},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -84,6 +86,7 @@ func TestFilterAnyArrayOfObjects(t *testing.T) {
 }
 
 func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "Tags/any(d:d eq 'Site')"
 	{
@@ -99,7 +102,7 @@ func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
 			{Value: "'Site'", Type: ExpressionTokenString},
 			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -109,7 +112,6 @@ func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	ctx := context.Background()
 	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
@@ -281,6 +283,7 @@ func TestFilterAnyMixedQuery(t *testing.T) {
 }
 
 func TestFilterGuid(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "GuidValue eq 01234567-89ab-cdef-0123-456789abcdef"
 
@@ -289,7 +292,7 @@ func TestFilterGuid(t *testing.T) {
 		{Value: "eq", Type: ExpressionTokenLogical},
 		{Value: "01234567-89ab-cdef-0123-456789abcdef", Type: ExpressionTokenGuid},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -300,6 +303,7 @@ func TestFilterGuid(t *testing.T) {
 }
 
 func TestFilterDurationWithType(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "Task eq duration'P12DT23H59M59.999999999999S'"
 
@@ -309,7 +313,7 @@ func TestFilterDurationWithType(t *testing.T) {
 		// Note the duration token is extracted.
 		{Value: "P12DT23H59M59.999999999999S", Type: ExpressionTokenDuration},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -321,6 +325,7 @@ func TestFilterDurationWithType(t *testing.T) {
 }
 
 func TestFilterDurationWithoutType(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "Task eq 'P12DT23H59M59.999999999999S'"
 
@@ -329,7 +334,7 @@ func TestFilterDurationWithoutType(t *testing.T) {
 		{Value: "eq", Type: ExpressionTokenLogical},
 		{Value: "P12DT23H59M59.999999999999S", Type: ExpressionTokenDuration},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -341,6 +346,7 @@ func TestFilterDurationWithoutType(t *testing.T) {
 }
 
 func TestFilterAnyWithNoArgs(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "Tags/any()"
 	{
@@ -351,7 +357,7 @@ func TestFilterAnyWithNoArgs(t *testing.T) {
 			{Value: "(", Type: ExpressionTokenOpenParen},
 			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -361,7 +367,6 @@ func TestFilterAnyWithNoArgs(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	ctx := context.Background()
 	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
@@ -379,6 +384,7 @@ func TestFilterAnyWithNoArgs(t *testing.T) {
 	}
 }
 func TestFilterDivby(t *testing.T) {
+	ctx := context.Background()
 	{
 		tokenizer := NewExpressionTokenizer()
 		input := "Price div 2 gt 3.5"
@@ -389,7 +395,7 @@ func TestFilterDivby(t *testing.T) {
 			{Value: "gt", Type: ExpressionTokenLogical},
 			{Value: "3.5", Type: ExpressionTokenFloat},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -409,7 +415,7 @@ func TestFilterDivby(t *testing.T) {
 			{Value: "gt", Type: ExpressionTokenLogical},
 			{Value: "3.5", Type: ExpressionTokenFloat},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -422,6 +428,7 @@ func TestFilterDivby(t *testing.T) {
 }
 
 func TestFilterNotBooleanProperty(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "not Enabled"
 	{
@@ -429,7 +436,7 @@ func TestFilterNotBooleanProperty(t *testing.T) {
 			{Value: "not", Type: ExpressionTokenLogical},
 			{Value: "Enabled", Type: ExpressionTokenLiteral},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -438,7 +445,6 @@ func TestFilterNotBooleanProperty(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	ctx := context.Background()
 	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
@@ -457,6 +463,7 @@ func TestFilterNotBooleanProperty(t *testing.T) {
 }
 
 func TestFilterEmptyStringToken(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "City eq ''"
 	expect := []*Token{
@@ -464,7 +471,7 @@ func TestFilterEmptyStringToken(t *testing.T) {
 		{Value: "eq", Type: ExpressionTokenLogical},
 		{Value: "''", Type: ExpressionTokenString},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -477,6 +484,7 @@ func TestFilterEmptyStringToken(t *testing.T) {
 // Note: according to ODATA ABNF notation, there must be a space between not and open parenthesis.
 // http://docs.oasis-open.org/odata/odata/v4.01/csprd03/abnf/odata-abnf-construction-rules.txt
 func TestFilterNotWithNoSpace(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "not(City eq 'Seattle')"
 	{
@@ -488,7 +496,7 @@ func TestFilterNotWithNoSpace(t *testing.T) {
 			{Value: "'Seattle'", Type: ExpressionTokenString},
 			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -497,7 +505,7 @@ func TestFilterNotWithNoSpace(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	ctx := context.Background()
+
 	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
@@ -518,6 +526,7 @@ func TestFilterNotWithNoSpace(t *testing.T) {
 
 // TestFilterInOperator tests the "IN" operator with a comma-separated list of values.
 func TestFilterInOperator(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "City in ( 'Seattle', 'Atlanta', 'Paris' )"
 
@@ -532,7 +541,7 @@ func TestFilterInOperator(t *testing.T) {
 		{Value: "'Paris'", Type: ExpressionTokenString},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	tokens, err := tokenizer.Tokenize(input)
+	tokens, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -541,7 +550,7 @@ func TestFilterInOperator(t *testing.T) {
 		t.Error(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(tokens)
+	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 	}
@@ -558,7 +567,7 @@ func TestFilterInOperator(t *testing.T) {
 		t.Error(err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(postfix)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -580,6 +589,7 @@ func TestFilterInOperator(t *testing.T) {
 
 // TestFilterInOperatorSingleValue tests the "IN" operator with a list containing a single value.
 func TestFilterInOperatorSingleValue(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "City in ( 'Seattle' )"
 
@@ -590,7 +600,7 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 		{Value: "'Seattle'", Type: ExpressionTokenString},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	tokens, err := tokenizer.Tokenize(input)
+	tokens, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -599,7 +609,7 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 		t.Error(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(tokens)
+	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 	}
@@ -614,7 +624,7 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 		t.Error(err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(postfix)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -634,6 +644,7 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 
 // TestFilterInOperatorEmptyList tests the "IN" operator with a list containing no value.
 func TestFilterInOperatorEmptyList(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "City in ( )"
 
@@ -643,7 +654,7 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 		{Value: "(", Type: ExpressionTokenOpenParen},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	tokens, err := tokenizer.Tokenize(input)
+	tokens, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -652,7 +663,7 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 		t.Fatal(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(tokens)
+	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -666,7 +677,7 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(postfix)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -688,6 +699,7 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 //   listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
 // Validate if a list is within another list.
 func TestFilterInOperatorBothSides(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "(1, 2) in ( ('ab', 'cd'), (1, 2), ('abc', 'def') )"
 
@@ -721,7 +733,7 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 		{Value: ")", Type: ExpressionTokenCloseParen},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	tokens, err := tokenizer.Tokenize(input)
+	tokens, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -730,7 +742,7 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 		t.Fatal(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(tokens)
+	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Fatalf("failed to convert from infix to postfix: %v", err)
 	}
@@ -764,7 +776,7 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 		t.Fatalf("Unexpected postfix notation: %v. Error: %v", postfix, err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(postfix)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Fatalf("Failed to convert postfix to tree: %v", err)
 	}
@@ -796,6 +808,7 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 // TestFilterInOperatorWithFunc tests the "IN" operator with a comma-separated list
 // of values, one of which is a function call which itself has a comma-separated list of values.
 func TestFilterInOperatorWithFunc(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	// 'Atlanta' is enclosed in a unecessary parenExpr to validate the expression is properly unwrapped.
 	input := "City in ( 'Seattle', concat('San', 'Francisco'), ('Atlanta') )"
@@ -819,7 +832,7 @@ func TestFilterInOperatorWithFunc(t *testing.T) {
 			{Value: ")", Type: ExpressionTokenCloseParen},
 			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -828,7 +841,6 @@ func TestFilterInOperatorWithFunc(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	ctx := context.Background()
 	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Fatalf("Error parsing filter: %v", err)
@@ -851,6 +863,7 @@ func TestFilterInOperatorWithFunc(t *testing.T) {
 }
 
 func TestFilterNotInListExpr(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "not ( City in ( 'Seattle', 'Atlanta' ) )"
 
@@ -867,7 +880,7 @@ func TestFilterNotInListExpr(t *testing.T) {
 			{Value: ")", Type: ExpressionTokenCloseParen},
 			{Value: ")", Type: ExpressionTokenCloseParen},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -877,18 +890,18 @@ func TestFilterNotInListExpr(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(tokens)
+		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		tree, err := GlobalFilterParser.PostfixToTree(output)
+		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -911,6 +924,7 @@ func TestFilterNotInListExpr(t *testing.T) {
 }
 
 func TestFilterAll(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "Tags/all(d:d/Key eq 'Site')"
 	expect := []*Token{
@@ -927,7 +941,7 @@ func TestFilterAll(t *testing.T) {
 		{Value: "'Site'", Type: ExpressionTokenString},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -939,7 +953,7 @@ func TestFilterAll(t *testing.T) {
 }
 
 func TestExpressionTokenizer(t *testing.T) {
-
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "Name eq 'Milk' and Price lt 2.55"
 	expect := []*Token{
@@ -951,7 +965,7 @@ func TestExpressionTokenizer(t *testing.T) {
 		{Value: "lt", Type: ExpressionTokenLogical},
 		{Value: "2.55", Type: ExpressionTokenFloat},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -963,6 +977,7 @@ func TestExpressionTokenizer(t *testing.T) {
 }
 
 func TestFilterFunction(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	// The syntax for ODATA functions follows the inline parameter syntax. The function name must be followed
 	// by an opening parenthesis, followed by a comma-separated list of parameters, followed by a closing parenthesis.
@@ -986,7 +1001,7 @@ func TestFilterFunction(t *testing.T) {
 		{Value: "'Houston'", Type: ExpressionTokenString},
 	}
 	{
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -996,17 +1011,17 @@ func TestFilterFunction(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(tokens)
+		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(output)
+		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1033,6 +1048,7 @@ func TestFilterFunction(t *testing.T) {
 }
 
 func TestFilterNestedFunction(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	// Test ODATA syntax with nested function calls
 	input := "contains(LastName, toupper('Smith')) or FirstName eq 'John'"
@@ -1052,7 +1068,7 @@ func TestFilterNestedFunction(t *testing.T) {
 		{Value: "'John'", Type: ExpressionTokenString},
 	}
 	{
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -1062,17 +1078,17 @@ func TestFilterNestedFunction(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(tokens)
+		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(output)
+		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1327,6 +1343,7 @@ func TestInvalidFilterSyntax(t *testing.T) {
 // See http://docs.oasis-open.org/odata/odata/v4.01/csprd02/part1-protocol/odata-v4.01-csprd02-part1-protocol.html#_Toc486263411
 // Test 'in', which is the 'Is a member of' operator.
 func TestFilterIn(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "contains(LastName, 'Smith') and Site in ('London', 'Paris', 'San Francisco', 'Dallas') and FirstName eq 'John'"
 	expect := []*Token{
@@ -1354,7 +1371,7 @@ func TestFilterIn(t *testing.T) {
 		{Value: "'John'", Type: ExpressionTokenString},
 	}
 	{
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 		}
@@ -1364,17 +1381,17 @@ func TestFilterIn(t *testing.T) {
 		}
 	}
 	{
-		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(tokens)
+		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(output)
+		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1440,7 +1457,7 @@ func TestFilterIn(t *testing.T) {
 }
 
 func TestExpressionTokenizerFunc(t *testing.T) {
-
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "not endswith(Name,'ilk')"
 	expect := []*Token{
@@ -1452,7 +1469,7 @@ func TestExpressionTokenizerFunc(t *testing.T) {
 		{Value: "'ilk'", Type: ExpressionTokenString},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1464,32 +1481,33 @@ func TestExpressionTokenizerFunc(t *testing.T) {
 }
 
 func BenchmarkFilterTokenizer(b *testing.B) {
+	ctx := context.Background()
 	t := NewExpressionTokenizer()
 	for i := 0; i < b.N; i++ {
 		input := "Name eq 'Milk' and Price lt 2.55"
-		if _, err := t.Tokenize(input); err != nil {
+		if _, err := t.Tokenize(ctx, input); err != nil {
 			b.Fatalf("Failed to tokenize filter: %v", err)
 		}
 	}
 }
 
 func TestFilterParserTree(t *testing.T) {
-
+	ctx := context.Background()
 	input := "not (A eq B)"
 
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 
 	if err != nil {
 		t.Error(err)
@@ -1506,19 +1524,20 @@ func TestFilterParserTree(t *testing.T) {
 }
 
 func TestFilterNestedPath(t *testing.T) {
+	ctx := context.Background()
 	input := "Address/City eq 'Redmond'"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1539,19 +1558,20 @@ func TestFilterNestedPath(t *testing.T) {
 }
 
 func TestFilterMultipleNestedPath(t *testing.T) {
+	ctx := context.Background()
 	input := "Product/Address/City eq 'Redmond'"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1574,20 +1594,21 @@ func TestFilterMultipleNestedPath(t *testing.T) {
 }
 
 func TestFilterSubstringFunction(t *testing.T) {
+	ctx := context.Background()
 	// substring can take 2 or 3 arguments.
 	{
 		input := "substring(CompanyName,1) eq 'Foo'"
-		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(tokens)
+		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(output)
+		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1607,17 +1628,17 @@ func TestFilterSubstringFunction(t *testing.T) {
 	}
 	{
 		input := "substring(CompanyName,1,2) eq 'lf'"
-		tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(tokens)
+		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(output)
+		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1639,9 +1660,10 @@ func TestFilterSubstringFunction(t *testing.T) {
 }
 
 func TestFilterSubstringofFunction(t *testing.T) {
+	ctx := context.Background()
 	// Previously, the parser was incorrectly interpreting the 'substringof' function as the 'sub' operator.
 	input := "substringof('Alfreds', CompanyName) eq true"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1662,7 +1684,7 @@ func TestFilterSubstringofFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1681,7 +1703,7 @@ func TestFilterSubstringofFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1703,9 +1725,10 @@ func TestFilterSubstringofFunction(t *testing.T) {
 // TestSubstringNestedFunction tests the substring function with a nested call
 // to substring, with the use of 2-argument and 3-argument substring.
 func TestFilterSubstringNestedFunction(t *testing.T) {
+	ctx := context.Background()
 	// Previously, the parser was incorrectly interpreting the 'substringof' function as the 'sub' operator.
 	input := "substring(substring('Francisco', 1), 3, 2) eq 'ci'"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1733,7 +1756,7 @@ func TestFilterSubstringNestedFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1757,7 +1780,7 @@ func TestFilterSubstringNestedFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1779,19 +1802,20 @@ func TestFilterSubstringNestedFunction(t *testing.T) {
 	}
 }
 func TestFilterGeoFunctions(t *testing.T) {
+	ctx := context.Background()
 	// Previously, the parser was incorrectly interpreting the 'geo.xxx' functions as the 'ge' operator.
 	input := "geo.distance(CurrentPosition,TargetPosition)"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1809,18 +1833,19 @@ func TestFilterGeoFunctions(t *testing.T) {
 }
 
 func TestFilterLambdaAny(t *testing.T) {
+	ctx := context.Background()
 	input := "Tags/any(var:var/Key eq 'Site')"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1845,14 +1870,15 @@ func TestFilterLambdaAny(t *testing.T) {
 }
 
 func TestFilterLambdaAnyNot(t *testing.T) {
+	ctx := context.Background()
 	input := "Price/any(t:not (12345 eq t ))"
 
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1874,7 +1900,7 @@ func TestFilterLambdaAnyNot(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1897,18 +1923,19 @@ func TestFilterLambdaAnyNot(t *testing.T) {
 }
 
 func TestFilterLambdaAnyAnd(t *testing.T) {
+	ctx := context.Background()
 	input := "Tags/any(var:var/Key eq 'Site' and var/Value eq 'London')"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1974,18 +2001,19 @@ func TestFilterLambdaNestedAny(t *testing.T) {
 
 // TestLambdaAnyNested validates the any() lambda function with multiple nested properties.
 func TestFilterLambdaAnyNestedProperties(t *testing.T) {
+	ctx := context.Background()
 	input := "Config/any(var:var/Config/Priority eq 123)"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2012,19 +2040,20 @@ func TestFilterLambdaAnyNestedProperties(t *testing.T) {
 }
 
 func TestFilterLambda2(t *testing.T) {
+	ctx := context.Background()
 	input := "Tags/any(var:var/Key eq 'Site' and var/Value eq 'London' or Price gt 1.0)"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2058,19 +2087,20 @@ func TestFilterLambda2(t *testing.T) {
 }
 
 func TestFilterLambda3(t *testing.T) {
+	ctx := context.Background()
 	input := "Tags/any(var:var/Key eq 'Site' and var/Value eq 'London' or Price gt 1.0 or contains(var/Value, 'Smith'))"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(input)
+	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(tokens)
+	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(output)
+	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2110,7 +2140,7 @@ func TestFilterLambda3(t *testing.T) {
 }
 
 func TestExpressionTokenizerExists(t *testing.T) {
-
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	input := "exists(Name,false)"
 	expect := []*Token{
@@ -2121,7 +2151,7 @@ func TestExpressionTokenizerExists(t *testing.T) {
 		{Value: "false", Type: ExpressionTokenBoolean},
 		{Value: ")", Type: ExpressionTokenCloseParen},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}

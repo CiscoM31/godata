@@ -1,11 +1,13 @@
 package godata
 
 import (
+	"context"
 	"strconv"
 	"testing"
 )
 
 func TestPEMDAS(t *testing.T) {
+	ctx := context.Background()
 	parser := EmptyParser()
 	parser.DefineFunction("sin", []int{1})
 	parser.DefineFunction("max", []int{2})
@@ -38,7 +40,7 @@ func TestPEMDAS(t *testing.T) {
 	expected := []string{"3", "4", "2", "*", "1", "5", "-", "2", "3", "^", "^",
 		"/", "+"}
 
-	result, err := parser.InfixToPostfix(tokens)
+	result, err := parser.InfixToPostfix(ctx, tokens)
 
 	if err != nil {
 		t.Error(err)
@@ -60,6 +62,7 @@ func TestPEMDAS(t *testing.T) {
 }
 
 func BenchmarkPEMDAS(b *testing.B) {
+	ctx := context.Background()
 	parser := EmptyParser()
 	parser.DefineFunction("sin", []int{1})
 	parser.DefineFunction("max", []int{2})
@@ -89,13 +92,14 @@ func BenchmarkPEMDAS(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		if _, err := parser.InfixToPostfix(tokens); err != nil {
+		if _, err := parser.InfixToPostfix(ctx, tokens); err != nil {
 			b.Fatalf("Failed to transform tokens from infix to postfix: %v", err)
 		}
 	}
 }
 
 func TestBoolean(t *testing.T) {
+	ctx := context.Background()
 	parser := EmptyParser()
 	parser.DefineOperator("NOT", 1, OpAssociationNone, 3)
 	parser.DefineOperator("AND", 2, OpAssociationLeft, 2)
@@ -117,7 +121,7 @@ func TestBoolean(t *testing.T) {
 
 	// A B NOT OR C AND B OR
 	expected := []string{"A", "B", "NOT", "OR", "C", "AND", "B", "OR"}
-	result, err := parser.InfixToPostfix(tokens)
+	result, err := parser.InfixToPostfix(ctx, tokens)
 
 	if err != nil {
 		t.Error(err)
@@ -139,6 +143,7 @@ func TestBoolean(t *testing.T) {
 }
 
 func TestFunc(t *testing.T) {
+	ctx := context.Background()
 	parser := EmptyParser()
 	parser.DefineFunction("sin", []int{1})
 	parser.DefineFunction("max", []int{2})
@@ -188,7 +193,7 @@ func TestFunc(t *testing.T) {
 		"volume", "2",
 		"/", "+",
 		"2" /* arg count */, "list" /* list expression */, "max"}
-	result, err := parser.InfixToPostfix(tokens)
+	result, err := parser.InfixToPostfix(ctx, tokens)
 
 	if err != nil {
 		t.Error(err)
@@ -209,6 +214,7 @@ func TestFunc(t *testing.T) {
 }
 
 func TestTree(t *testing.T) {
+	ctx := context.Background()
 	parser := EmptyParser()
 	parser.DefineFunction("sin", []int{1})
 	parser.DefineFunction("max", []int{2})
@@ -236,12 +242,12 @@ func TestTree(t *testing.T) {
 	}
 
 	// 2 3 max 3 / 3.1415 * sin
-	result, err := parser.InfixToPostfix(tokens)
+	result, err := parser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	root, err := parser.PostfixToTree(result)
+	root, err := parser.PostfixToTree(ctx, result)
 	if err != nil {
 		t.Fatalf("Error parsing query: %v", err)
 	}
@@ -272,6 +278,7 @@ func TestTree(t *testing.T) {
 }
 
 func BenchmarkBuildTree(b *testing.B) {
+	ctx := context.Background()
 	parser := EmptyParser()
 	parser.DefineFunction("sin", []int{1})
 	parser.DefineFunction("max", []int{2})
@@ -300,8 +307,8 @@ func BenchmarkBuildTree(b *testing.B) {
 
 	// 2 3 max 3 / 3.1415 * sin
 	for i := 0; i < b.N; i++ {
-		result, _ := parser.InfixToPostfix(tokens)
-		if _, err := parser.PostfixToTree(result); err != nil {
+		result, _ := parser.InfixToPostfix(ctx, tokens)
+		if _, err := parser.PostfixToTree(ctx, result); err != nil {
 			b.Fatalf("Failed to transform tokens: %v", err)
 		}
 	}

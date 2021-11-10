@@ -22,15 +22,15 @@ var GlobalSearchParser = SearchParser()
 // Convert an input string from the $filter part of the URL into a parse
 // tree that can be used by providers to create a response.
 func ParseSearchString(ctx context.Context, filter string) (*GoDataSearchQuery, error) {
-	tokens, err := GlobalSearchTokenizer.Tokenize(filter)
+	tokens, err := GlobalSearchTokenizer.Tokenize(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	postfix, err := GlobalSearchParser.InfixToPostfix(tokens)
+	postfix, err := GlobalSearchParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		return nil, err
 	}
-	tree, err := GlobalSearchParser.PostfixToTree(postfix)
+	tree, err := GlobalSearchParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		return nil, err
 	}

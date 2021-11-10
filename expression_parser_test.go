@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,6 +15,7 @@ func TestTokenTypes(t *testing.T) {
 }
 
 func TestExpressionDateTime(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := NewExpressionTokenizer()
 	tokens := map[string]ExpressionTokenType{
 		"2011-08-29T21:58Z":             ExpressionTokenDateTime,
@@ -40,7 +42,7 @@ func TestExpressionDateTime(t *testing.T) {
 			{Value: "gt", Type: ExpressionTokenLogical},
 			{Value: tokenValue, Type: tokenType},
 		}
-		output, err := tokenizer.Tokenize(input)
+		output, err := tokenizer.Tokenize(ctx, input)
 		if err != nil {
 			t.Errorf("Failed to tokenize input %s. Error: %v", input, err)
 		}
@@ -319,10 +321,11 @@ func TestInvalidExpressionSyntax(t *testing.T) {
 }
 
 func BenchmarkExpressionTokenizer(b *testing.B) {
+	ctx := context.Background()
 	t := NewExpressionTokenizer()
 	for i := 0; i < b.N; i++ {
 		input := "Name eq 'Milk' and Price lt 2.55"
-		if _, err := t.Tokenize(input); err != nil {
+		if _, err := t.Tokenize(ctx, input); err != nil {
 			b.Fatalf("Failed to tokenize expression: %v", err)
 		}
 	}
@@ -432,11 +435,11 @@ func CompareTree(node *ParseNode, expect []expectedParseNode, pos *int, level in
 }
 
 func TestExpressions(t *testing.T) {
-
+	ctx := context.Background()
 	p := NewExpressionParser()
 	for _, testCase := range testCases {
 		t.Logf("Expression: %s", testCase.expression)
-		tokens, err := GlobalExpressionTokenizer.Tokenize(testCase.expression)
+		tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, testCase.expression)
 		if err != nil {
 			t.Errorf("Failed to tokenize expression '%s'. Error: %v", testCase.expression, err)
 			continue
@@ -447,7 +450,7 @@ func TestExpressions(t *testing.T) {
 				continue
 			}
 		}
-		output, err := p.InfixToPostfix(tokens)
+		output, err := p.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Errorf("Failed to convert expression to postfix notation: %v", err)
 			continue
@@ -458,7 +461,7 @@ func TestExpressions(t *testing.T) {
 				continue
 			}
 		}
-		tree, err := p.PostfixToTree(output)
+		tree, err := p.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Errorf("Failed to parse expression '%s'. Error: %v", testCase.expression, err)
 			continue

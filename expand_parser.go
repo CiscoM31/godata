@@ -52,7 +52,7 @@ func ExpandTokenizer() *Tokenizer {
 }
 
 func ParseExpandString(ctx context.Context, expand string) (*GoDataExpandQuery, error) {
-	tokens, err := GlobalExpandTokenizer.Tokenize(expand)
+	tokens, err := GlobalExpandTokenizer.Tokenize(ctx, expand)
 
 	if err != nil {
 		return nil, err

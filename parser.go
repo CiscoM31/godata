@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -106,7 +107,7 @@ func (t *Tokenizer) Ignore(pattern string, token TokenType) {
 
 // TokenizeBytes takes the input byte array and returns an array of tokens.
 // Return an empty array if there are no tokens.
-func (t *Tokenizer) TokenizeBytes(target []byte) ([]*Token, error) {
+func (t *Tokenizer) TokenizeBytes(ctx context.Context, target []byte) ([]*Token, error) {
 	result := make([]*Token, 0)
 	match := true // false when no match is found
 	for len(target) > 0 && match {
@@ -185,8 +186,8 @@ func (t *Tokenizer) TokenizeBytes(target []byte) ([]*Token, error) {
 	return result, nil
 }
 
-func (t *Tokenizer) Tokenize(target string) ([]*Token, error) {
-	return t.TokenizeBytes([]byte(target))
+func (t *Tokenizer) Tokenize(ctx context.Context, target string) ([]*Token, error) {
+	return t.TokenizeBytes(ctx, []byte(target))
 }
 
 type TokenHandler func(token *Token, stack tokenStack) error
@@ -314,7 +315,7 @@ func (p *Parser) isOperator(token *Token) bool {
 // Postfix notation with wall notation:                 | a b c d f
 // Postfix notation with count notation:                a b c d 4 f
 //
-func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
+func (p *Parser) InfixToPostfix(ctx context.Context, tokens []*Token) (*tokenQueue, error) {
 	queue := tokenQueue{} // output queue in postfix
 	stack := tokenStack{} // Operator stack
 
@@ -531,7 +532,7 @@ func (p *Parser) InfixToPostfix(tokens []*Token) (*tokenQueue, error) {
 }
 
 // PostfixToTree converts a Postfix token queue to a parse tree
-func (p *Parser) PostfixToTree(queue *tokenQueue) (*ParseNode, error) {
+func (p *Parser) PostfixToTree(ctx context.Context, queue *tokenQueue) (*ParseNode, error) {
 	stack := &nodeStack{}
 	currNode := &ParseNode{}
 

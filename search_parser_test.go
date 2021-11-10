@@ -1,10 +1,12 @@
 package godata
 
 import (
+	"context"
 	"testing"
 )
 
 func TestSearchQuery(t *testing.T) {
+	ctx := context.Background()
 	tokenizer := SearchTokenizer()
 	input := "mountain OR (\"red bikes\" AND avocados)"
 
@@ -17,7 +19,7 @@ func TestSearchQuery(t *testing.T) {
 		{Value: "avocados", Type: SearchTokenLiteral},
 		{Value: ")", Type: SearchTokenCloseParen},
 	}
-	output, err := tokenizer.Tokenize(input)
+	output, err := tokenizer.Tokenize(ctx, input)
 	if err != nil {
 		t.Error(err)
 	}

@@ -113,7 +113,7 @@ func TestSemanticizeRequest(t *testing.T) {
 		return
 	}
 	ctx := context.Background()
-	req, err := ParseRequest(ctx, url.Path, url.Query(), false)
+	req, err := ParseRequest(ctx, url.Path, url.Query())
 
 	if err != nil {
 		t.Error(err)
@@ -181,7 +181,7 @@ func TestSemanticizeRequestWildcard(t *testing.T) {
 		return
 	}
 	ctx := context.Background()
-	req, err := ParseRequest(ctx, url.Path, url.Query(), false)
+	req, err := ParseRequest(ctx, url.Path, url.Query())
 
 	if err != nil {
 		t.Error(err)
@@ -263,7 +263,7 @@ func BenchmarkTypicalParseSemanticizeRequest(b *testing.B) {
 	}
 	ctx := context.Background()
 	for n := 0; n < b.N; n++ {
-		req, err := ParseRequest(ctx, url.Path, url.Query(), false)
+		req, err := ParseRequest(ctx, url.Path, url.Query())
 
 		if err != nil {
 			b.Error(err)
@@ -299,7 +299,7 @@ func BenchmarkWildcardParseSemanticizeRequest(b *testing.B) {
 	}
 	ctx := context.Background()
 	for n := 0; n < b.N; n++ {
-		req, err := ParseRequest(ctx, url.Path, url.Query(), false)
+		req, err := ParseRequest(ctx, url.Path, url.Query())
 
 		if err != nil {
 			b.Error(err)
