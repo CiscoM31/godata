@@ -1,5 +1,7 @@
 package godata
 
+import "context"
+
 type SearchTokenType int
 
 func (s SearchTokenType) Value() int {
@@ -19,7 +21,7 @@ var GlobalSearchParser = SearchParser()
 
 // Convert an input string from the $filter part of the URL into a parse
 // tree that can be used by providers to create a response.
-func ParseSearchString(filter string) (*GoDataSearchQuery, error) {
+func ParseSearchString(ctx context.Context, filter string) (*GoDataSearchQuery, error) {
 	tokens, err := GlobalSearchTokenizer.Tokenize(filter)
 	if err != nil {
 		return nil, err

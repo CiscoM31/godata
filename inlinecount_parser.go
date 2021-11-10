@@ -1,11 +1,13 @@
 package godata
 
+import "context"
+
 const (
 	ALLPAGES = "allpages"
 	NONE     = "none"
 )
 
-func ParseInlineCountString(inlinecount string) (*GoDataInlineCountQuery, error) {
+func ParseInlineCountString(ctx context.Context, inlinecount string) (*GoDataInlineCountQuery, error) {
 	result := GoDataInlineCountQuery(inlinecount)
 	if inlinecount == ALLPAGES {
 		return &result, nil

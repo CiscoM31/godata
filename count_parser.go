@@ -1,10 +1,11 @@
 package godata
 
 import (
+	"context"
 	"strconv"
 )
 
-func ParseCountString(count string) (*GoDataCountQuery, error) {
+func ParseCountString(ctx context.Context, count string) (*GoDataCountQuery, error) {
 	i, err := strconv.ParseBool(count)
 	if err != nil {
 		return nil, err

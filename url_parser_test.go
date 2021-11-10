@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -15,8 +16,8 @@ func TestUrlParser(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
-	request, err := ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	ctx := context.Background()
+	request, err := ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 
 	if err != nil {
 		t.Error(err)
@@ -44,7 +45,8 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	ctx := context.Background()
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -56,7 +58,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -69,7 +71,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err == nil {
 		t.Errorf("Parser should have returned invalid filter error: %s", testUrl)
 		return
@@ -84,7 +86,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -99,7 +101,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err == nil {
 		t.Errorf("Parser should have returned invalid filter error: %s", testUrl)
 		return
@@ -111,7 +113,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -123,7 +125,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
 	if err != nil {
 		t.Errorf("Unexpected parsing error: %v", err)
 		return
@@ -160,7 +162,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
 	if err == nil {
 		t.Errorf("Parser should have raised error")
 		return
@@ -174,13 +176,13 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		return
 	}
 	// In lenient mode, do not return an error when there is a duplicate keyword.
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), true /*lenient*/)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), true /*lenient*/)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	// In strict mode, return an error when there is a duplicate keyword.
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
 	if err == nil {
 		t.Error("Parser should have returned duplicate keyword error")
 		return
@@ -193,12 +195,12 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), true /*lenient*/)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), true /*lenient*/)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false /*strict*/)
 	if err == nil {
 		t.Error("Parser should have returned unsupported keyword error")
 		return
@@ -210,7 +212,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -222,7 +224,7 @@ func TestUrlParserStrictValidation(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_, err = ParseRequest(parsedUrl.Path, parsedUrl.Query(), false)
+	_, err = ParseRequest(ctx, parsedUrl.Path, parsedUrl.Query(), false)
 	if err != nil {
 		t.Error(err)
 		return
@@ -498,9 +500,10 @@ func TestUnescapeStringTokens(t *testing.T) {
 			continue
 		}
 		t.Logf("Running test case %s", testCase.url)
-		var request *GoDataRequest
+
 		urlQuery := parsedUrl.Query()
-		request, err = ParseRequest(parsedUrl.Path, urlQuery, false /*strict*/)
+		ctx := context.Background()
+		request, err := ParseRequest(ctx, parsedUrl.Path, urlQuery, false /*strict*/)
 		if testCase.errRegex == nil && err != nil {
 			t.Errorf("Test case '%s' failed: %v", testCase.url, err)
 			continue

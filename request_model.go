@@ -2,8 +2,10 @@ package godata
 
 type GoDataIdentifier map[string]string
 
+type RequestKind int
+
 const (
-	RequestKindUnknown int = iota
+	RequestKindUnknown RequestKind = iota
 	RequestKindMetadata
 	RequestKindService
 	RequestKindEntity
@@ -35,7 +37,7 @@ type GoDataRequest struct {
 	FirstSegment *GoDataSegment
 	LastSegment  *GoDataSegment
 	Query        *GoDataQuery
-	RequestKind  int
+	RequestKind  RequestKind
 }
 
 // Represents a segment (slash-separated) part of the URI path. Each segment

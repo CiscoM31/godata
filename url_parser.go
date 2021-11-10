@@ -1,100 +1,105 @@
 package godata
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
 )
 
+func NewGoDataRequest() *GoDataRequest {
+	return &GoDataRequest{}
+}
+
 // Parse a request from the HTTP server and format it into a GoDaataRequest type
 // to be passed to a provider to produce a result.
-func ParseRequest(path string, query url.Values, lenient bool) (*GoDataRequest, error) {
-
-	firstSegment, lastSegment, err := ParseUrlPath(path)
-	if err != nil {
-		return nil, err
-	}
-	parsedQuery, err := ParseUrlQuery(query, lenient)
-	if err != nil {
-		return nil, err
+func ParseRequest(ctx context.Context, path string, query url.Values, lenient bool) (*GoDataRequest, error) {
+	r := &GoDataRequest{
+		RequestKind: RequestKindUnknown,
 	}
 
-	return &GoDataRequest{firstSegment, lastSegment, parsedQuery, RequestKindUnknown}, nil
+	if err := r.ParseUrlPath(path); err != nil {
+		return nil, err
+	}
+	if err := r.ParseUrlQuery(ctx, query, lenient); err != nil {
+		return nil, err
+	}
+	return r, nil
 }
 
 // Compare a request to a given service, and validate the semantics and update
 // the request with semantics included
-func SemanticizeRequest(req *GoDataRequest, service *GoDataService) error {
+func (r *GoDataRequest) SemanticizeRequest(service *GoDataService) error {
 
 	// if request kind is a resource
-	for segment := req.FirstSegment; segment != nil; segment = segment.Next {
+	for segment := r.FirstSegment; segment != nil; segment = segment.Next {
 		err := SemanticizePathSegment(segment, service)
 		if err != nil {
 			return err
 		}
 	}
 
-	switch req.LastSegment.SemanticReference.(type) {
+	switch r.LastSegment.SemanticReference.(type) {
 	case *GoDataEntitySet:
-		entitySet := req.LastSegment.SemanticReference.(*GoDataEntitySet)
+		entitySet := r.LastSegment.SemanticReference.(*GoDataEntitySet)
 		entityType, err := service.LookupEntityType(entitySet.EntityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeFilterQuery(req.Query.Filter, service, entityType)
+		err = SemanticizeFilterQuery(r.Query.Filter, service, entityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeExpandQuery(req.Query.Expand, service, entityType)
+		err = SemanticizeExpandQuery(r.Query.Expand, service, entityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeSelectQuery(req.Query.Select, service, entityType)
+		err = SemanticizeSelectQuery(r.Query.Select, service, entityType)
 		if err != nil {
 			return err
 		}
-		err = SemanticizeOrderByQuery(req.Query.OrderBy, service, entityType)
+		err = SemanticizeOrderByQuery(r.Query.OrderBy, service, entityType)
 		if err != nil {
 			return err
 		}
 		// TODO: disallow invalid query params
 	case *GoDataEntityType:
-		entityType := req.LastSegment.SemanticReference.(*GoDataEntityType)
-		if err := SemanticizeExpandQuery(req.Query.Expand, service, entityType); err != nil {
+		entityType := r.LastSegment.SemanticReference.(*GoDataEntityType)
+		if err := SemanticizeExpandQuery(r.Query.Expand, service, entityType); err != nil {
 			return err
 		}
-		if err := SemanticizeSelectQuery(req.Query.Select, service, entityType); err != nil {
+		if err := SemanticizeSelectQuery(r.Query.Select, service, entityType); err != nil {
 			return err
 		}
 	}
 
-	if req.LastSegment.SemanticType == SemanticTypeMetadata {
-		req.RequestKind = RequestKindMetadata
-	} else if req.LastSegment.SemanticType == SemanticTypeRef {
-		req.RequestKind = RequestKindRef
-	} else if req.LastSegment.SemanticType == SemanticTypeEntitySet {
-		if req.LastSegment.Identifier == nil {
-			req.RequestKind = RequestKindCollection
+	if r.LastSegment.SemanticType == SemanticTypeMetadata {
+		r.RequestKind = RequestKindMetadata
+	} else if r.LastSegment.SemanticType == SemanticTypeRef {
+		r.RequestKind = RequestKindRef
+	} else if r.LastSegment.SemanticType == SemanticTypeEntitySet {
+		if r.LastSegment.Identifier == nil {
+			r.RequestKind = RequestKindCollection
 		} else {
-			req.RequestKind = RequestKindEntity
+			r.RequestKind = RequestKindEntity
 		}
-	} else if req.LastSegment.SemanticType == SemanticTypeCount {
-		req.RequestKind = RequestKindCount
-	} else if req.FirstSegment == nil && req.LastSegment == nil {
-		req.RequestKind = RequestKindService
+	} else if r.LastSegment.SemanticType == SemanticTypeCount {
+		r.RequestKind = RequestKindCount
+	} else if r.FirstSegment == nil && r.LastSegment == nil {
+		r.RequestKind = RequestKindService
 	}
 
 	return nil
 }
 
-func ParseUrlPath(path string) (*GoDataSegment, *GoDataSegment, error) {
+func (r *GoDataRequest) ParseUrlPath(path string) error {
 	parts := strings.Split(path, "/")
-	firstSegment := &GoDataSegment{
+	r.FirstSegment = &GoDataSegment{
 		RawValue:   parts[0],
 		Name:       ParseName(parts[0]),
 		Identifier: ParseIdentifiers(parts[0]),
 	}
-	currSegment := firstSegment
+	currSegment := r.FirstSegment
 	for _, v := range parts[1:] {
 		temp := &GoDataSegment{
 			RawValue:   v,
@@ -105,9 +110,9 @@ func ParseUrlPath(path string) (*GoDataSegment, *GoDataSegment, error) {
 		currSegment.Next = temp
 		currSegment = temp
 	}
-	lastSegment := currSegment
+	r.LastSegment = currSegment
 
-	return firstSegment, lastSegment, nil
+	return nil
 }
 
 func SemanticizePathSegment(segment *GoDataSegment, service *GoDataService) error {
@@ -225,16 +230,20 @@ var supportedOdataKeywords = map[string]bool{
 	"tags":         true,
 }
 
-func ParseUrlQuery(query url.Values, lenient bool) (*GoDataQuery, error) {
+// If lenient is true, the following logic is applied. If lenient is false, return an error:
+// - Allow duplicate ODATA keywords in the URL query.
+// - Ignore unknown ODATA keywords in the URL query.
+// - Allow extraneous comma as the last character in a list of function arguments.
+func (r *GoDataRequest) ParseUrlQuery(ctx context.Context, query url.Values, lenient bool) error {
 	if !lenient {
 		// Validate each query parameter is a valid ODATA keyword.
 		for key, val := range query {
 			if _, ok := supportedOdataKeywords[key]; !ok {
-				return nil, BadRequestError(fmt.Sprintf("Query parameter '%s' is not supported", key)).
+				return BadRequestError(fmt.Sprintf("Query parameter '%s' is not supported", key)).
 					SetCause(&UnsupportedQueryParameterError{key})
 			}
 			if len(val) > 1 {
-				return nil, BadRequestError(fmt.Sprintf("Query parameter '%s' cannot be specified more than once", key)).
+				return BadRequestError(fmt.Sprintf("Query parameter '%s' cannot be specified more than once", key)).
 					SetCause(&DuplicateQueryParameterError{key})
 			}
 		}
@@ -256,85 +265,85 @@ func ParseUrlQuery(query url.Values, lenient bool) (*GoDataQuery, error) {
 
 	var err error = nil
 	if filter != "" {
-		result.Filter, err = ParseFilterString(filter)
+		result.Filter, err = ParseFilterString(ctx, filter)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if at != "" {
-		result.At, err = ParseFilterString(at)
+		result.At, err = ParseFilterString(ctx, at)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if at != "" {
-		result.At, err = ParseFilterString(at)
+		result.At, err = ParseFilterString(ctx, at)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if apply != "" {
-		result.Apply, err = ParseApplyString(apply)
+		result.Apply, err = ParseApplyString(ctx, apply)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if expand != "" {
-		result.Expand, err = ParseExpandString(expand)
+		result.Expand, err = ParseExpandString(ctx, expand)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if sel != "" {
-		result.Select, err = ParseSelectString(sel)
+		result.Select, err = ParseSelectString(ctx, sel)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if orderby != "" {
-		result.OrderBy, err = ParseOrderByString(orderby)
+		result.OrderBy, err = ParseOrderByString(ctx, orderby)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if top != "" {
-		result.Top, err = ParseTopString(top)
+		result.Top, err = ParseTopString(ctx, top)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if skip != "" {
-		result.Skip, err = ParseSkipString(skip)
+		result.Skip, err = ParseSkipString(ctx, skip)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if count != "" {
-		result.Count, err = ParseCountString(count)
+		result.Count, err = ParseCountString(ctx, count)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if inlinecount != "" {
-		result.InlineCount, err = ParseInlineCountString(inlinecount)
+		result.InlineCount, err = ParseInlineCountString(ctx, inlinecount)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if search != "" {
-		result.Search, err = ParseSearchString(search)
+		result.Search, err = ParseSearchString(ctx, search)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if format != "" {
 		err = NotImplementedError("Format is not supported")
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	return result, err
+	r.Query = result
+	return err
 }
 
 func ParseIdentifiers(segment string) *GoDataIdentifier {

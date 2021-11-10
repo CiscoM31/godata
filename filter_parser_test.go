@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -108,7 +109,8 @@ func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	q, err := ParseFilterString(input)
+	ctx := context.Background()
+	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
@@ -230,7 +232,8 @@ func TestFilterAnyMixedQuery(t *testing.T) {
 	// Other path expressions in the Boolean expression neither prefixed with the lambda variable nor $it are evaluated in the scope of
 	// the collection instances at the origin of the navigation path prepended to the lambda operator.
 	input := "Tags/any(d:d eq 'Site' or 'Environment' eq d/Key or d/d/d eq 123456 or concat(d/FirstName, d/LastName) eq $it/FullName)"
-	q, err := ParseFilterString(input)
+	ctx := context.Background()
+	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
@@ -358,7 +361,8 @@ func TestFilterAnyWithNoArgs(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	q, err := ParseFilterString(input)
+	ctx := context.Background()
+	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
@@ -434,7 +438,8 @@ func TestFilterNotBooleanProperty(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	q, err := ParseFilterString(input)
+	ctx := context.Background()
+	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
@@ -492,8 +497,8 @@ func TestFilterNotWithNoSpace(t *testing.T) {
 			t.Error(err)
 		}
 	}
-
-	q, err := ParseFilterString(input)
+	ctx := context.Background()
+	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return
@@ -823,7 +828,8 @@ func TestFilterInOperatorWithFunc(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	q, err := ParseFilterString(input)
+	ctx := context.Background()
+	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Fatalf("Error parsing filter: %v", err)
 	}
@@ -1232,8 +1238,9 @@ func TestValidFilterSyntax(t *testing.T) {
 			"Tags/any(var:var/Key eq 'Site' and var/Value eq 'New York City') or " +
 			"Tags/any(var:var/Key eq 'Site' and var/Value eq 'San Francisco')",
 	}
+	ctx := context.Background()
 	for _, input := range queries {
-		q, err := ParseFilterString(input)
+		q, err := ParseFilterString(ctx, input)
 		if err != nil {
 			t.Errorf("Error parsing query %s. Error: %v", input, err)
 			return
@@ -1307,8 +1314,9 @@ func TestInvalidFilterSyntax(t *testing.T) {
 		"numCore neq 12",               // Invalid operator. It should be 'ne'
 		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
 	}
+	ctx := context.Background()
 	for _, input := range queries {
-		q, err := ParseFilterString(input)
+		q, err := ParseFilterString(ctx, input)
 		if err == nil {
 			// The parser has incorrectly determined the syntax is valid.
 			t.Errorf("The query '$filter=%s' is not valid ODATA syntax. The ODATA parser should return an error. Tree:\n%v", input, q.Tree)
@@ -1932,7 +1940,8 @@ func TestFilterLambdaAnyAnd(t *testing.T) {
 
 func TestFilterLambdaNestedAny(t *testing.T) {
 	input := "Enabled/any(t:t/Value eq Config/any(c:c/AdminState eq 'TRUE'))"
-	q, err := ParseFilterString(input)
+	ctx := context.Background()
+	q, err := ParseFilterString(ctx, input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %v", input, err)
 		return

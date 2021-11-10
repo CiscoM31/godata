@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"strconv"
 )
 
@@ -50,7 +51,7 @@ func ExpandTokenizer() *Tokenizer {
 	return &t
 }
 
-func ParseExpandString(expand string) (*GoDataExpandQuery, error) {
+func ParseExpandString(ctx context.Context, expand string) (*GoDataExpandQuery, error) {
 	tokens, err := GlobalExpandTokenizer.Tokenize(expand)
 
 	if err != nil {
@@ -74,7 +75,7 @@ func ParseExpandString(expand string) (*GoDataExpandQuery, error) {
 		} else if token.Value == "," {
 			if stack.Empty() {
 				// no paren on the stack, parse this item and start a new queue
-				item, err := ParseExpandItem(queue)
+				item, err := ParseExpandItem(ctx, queue)
 				if err != nil {
 					return nil, err
 				}
@@ -93,7 +94,7 @@ func ParseExpandString(expand string) (*GoDataExpandQuery, error) {
 		return nil, BadRequestError("Mismatched parentheses in expand clause.")
 	}
 
-	item, err := ParseExpandItem(queue)
+	item, err := ParseExpandItem(ctx, queue)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +103,7 @@ func ParseExpandString(expand string) (*GoDataExpandQuery, error) {
 	return &GoDataExpandQuery{ExpandItems: items}, nil
 }
 
-func ParseExpandItem(input tokenQueue) (*ExpandItem, error) {
+func ParseExpandItem(ctx context.Context, input tokenQueue) (*ExpandItem, error) {
 
 	item := &ExpandItem{}
 	item.Path = []*Token{}
@@ -128,7 +129,7 @@ func ParseExpandItem(input tokenQueue) (*ExpandItem, error) {
 				queue.Enqueue(token)
 			} else {
 				// top level slash means we're done parsing the options
-				err := ParseExpandOption(queue, item)
+				err := ParseExpandOption(ctx, queue, item)
 				if err != nil {
 					return nil, err
 				}
@@ -140,7 +141,7 @@ func ParseExpandItem(input tokenQueue) (*ExpandItem, error) {
 			item.Path = append(item.Path, queue.Dequeue())
 		} else if token.Value == ";" && stack.Size == 1 {
 			// semicolons only split expand options at the first level
-			err := ParseExpandOption(queue, item)
+			err := ParseExpandOption(ctx, queue, item)
 			if err != nil {
 				return nil, err
 			}
@@ -162,7 +163,7 @@ func ParseExpandItem(input tokenQueue) (*ExpandItem, error) {
 	return item, nil
 }
 
-func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
+func ParseExpandOption(ctx context.Context, queue *tokenQueue, item *ExpandItem) error {
 	head := queue.Dequeue().Value
 	if queue.Head == nil {
 		return BadRequestError("Invalid expand clause.")
@@ -171,7 +172,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	body := queue.GetValue()
 
 	if head == "$filter" {
-		filter, err := ParseFilterString(body)
+		filter, err := ParseFilterString(ctx, body)
 		if err == nil {
 			item.Filter = filter
 		} else {
@@ -180,7 +181,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	}
 
 	if head == "at" {
-		at, err := ParseFilterString(body)
+		at, err := ParseFilterString(ctx, body)
 		if err == nil {
 			item.At = at
 		} else {
@@ -189,7 +190,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	}
 
 	if head == "$search" {
-		search, err := ParseSearchString(body)
+		search, err := ParseSearchString(ctx, body)
 		if err == nil {
 			item.Search = search
 		} else {
@@ -198,7 +199,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	}
 
 	if head == "$orderby" {
-		orderby, err := ParseOrderByString(body)
+		orderby, err := ParseOrderByString(ctx, body)
 		if err == nil {
 			item.OrderBy = orderby
 		} else {
@@ -207,7 +208,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	}
 
 	if head == "$skip" {
-		skip, err := ParseSkipString(body)
+		skip, err := ParseSkipString(ctx, body)
 		if err == nil {
 			item.Skip = skip
 		} else {
@@ -216,7 +217,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	}
 
 	if head == "$top" {
-		top, err := ParseTopString(body)
+		top, err := ParseTopString(ctx, body)
 		if err == nil {
 			item.Top = top
 		} else {
@@ -225,7 +226,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	}
 
 	if head == "$select" {
-		sel, err := ParseSelectString(body)
+		sel, err := ParseSelectString(ctx, body)
 		if err == nil {
 			item.Select = sel
 		} else {
@@ -234,7 +235,7 @@ func ParseExpandOption(queue *tokenQueue, item *ExpandItem) error {
 	}
 
 	if head == "$expand" {
-		expand, err := ParseExpandString(body)
+		expand, err := ParseExpandString(ctx, body)
 		if err == nil {
 			item.Expand = expand
 		} else {

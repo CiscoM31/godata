@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"errors"
 	"strings"
 )
@@ -9,7 +10,7 @@ type SelectItem struct {
 	Segments []*Token
 }
 
-func ParseSelectString(sel string) (*GoDataSelectQuery, error) {
+func ParseSelectString(ctx context.Context, sel string) (*GoDataSelectQuery, error) {
 	items := strings.Split(sel, ",")
 
 	result := []*SelectItem{}

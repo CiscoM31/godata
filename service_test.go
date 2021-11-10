@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"net/url"
 	"testing"
 )
@@ -111,8 +112,8 @@ func TestSemanticizeRequest(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
-	req, err := ParseRequest(url.Path, url.Query(), false)
+	ctx := context.Background()
+	req, err := ParseRequest(ctx, url.Path, url.Query(), false)
 
 	if err != nil {
 		t.Error(err)
@@ -126,7 +127,7 @@ func TestSemanticizeRequest(t *testing.T) {
 		return
 	}
 
-	err = SemanticizeRequest(req, service)
+	err = req.SemanticizeRequest(service)
 
 	if err != nil {
 		t.Error(err)
@@ -179,8 +180,8 @@ func TestSemanticizeRequestWildcard(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
-	req, err := ParseRequest(url.Path, url.Query(), false)
+	ctx := context.Background()
+	req, err := ParseRequest(ctx, url.Path, url.Query(), false)
 
 	if err != nil {
 		t.Error(err)
@@ -194,7 +195,7 @@ func TestSemanticizeRequestWildcard(t *testing.T) {
 		return
 	}
 
-	err = SemanticizeRequest(req, service)
+	err = req.SemanticizeRequest(service)
 
 	if err != nil {
 		t.Errorf("Failed to semanticize request. Error: %v", err)
@@ -260,10 +261,9 @@ func BenchmarkTypicalParseSemanticizeRequest(b *testing.B) {
 		b.Error(err)
 		return
 	}
-
+	ctx := context.Background()
 	for n := 0; n < b.N; n++ {
-
-		req, err := ParseRequest(url.Path, url.Query(), false)
+		req, err := ParseRequest(ctx, url.Path, url.Query(), false)
 
 		if err != nil {
 			b.Error(err)
@@ -277,7 +277,7 @@ func BenchmarkTypicalParseSemanticizeRequest(b *testing.B) {
 			return
 		}
 
-		err = SemanticizeRequest(req, service)
+		err = req.SemanticizeRequest(service)
 
 		if err != nil {
 			b.Error(err)
@@ -297,10 +297,9 @@ func BenchmarkWildcardParseSemanticizeRequest(b *testing.B) {
 		b.Error(err)
 		return
 	}
-
+	ctx := context.Background()
 	for n := 0; n < b.N; n++ {
-
-		req, err := ParseRequest(url.Path, url.Query(), false)
+		req, err := ParseRequest(ctx, url.Path, url.Query(), false)
 
 		if err != nil {
 			b.Error(err)
@@ -314,7 +313,7 @@ func BenchmarkWildcardParseSemanticizeRequest(b *testing.B) {
 			return
 		}
 
-		err = SemanticizeRequest(req, service)
+		err = req.SemanticizeRequest(service)
 
 		if err != nil {
 			b.Error(err)

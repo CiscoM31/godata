@@ -1,13 +1,14 @@
 package godata
 
 import (
+	"context"
 	"testing"
 )
 
 func TestTrivialExpand(t *testing.T) {
 	input := "Products/Categories"
-
-	output, err := ParseExpandString(input)
+	ctx := context.Background()
+	output, err := ParseExpandString(ctx, input)
 
 	if err != nil {
 		t.Error(err)
@@ -26,8 +27,8 @@ func TestTrivialExpand(t *testing.T) {
 
 func TestSimpleExpand(t *testing.T) {
 	input := "Products($filter=DiscontinuedDate eq null)"
-
-	output, err := ParseExpandString(input)
+	ctx := context.Background()
+	output, err := ParseExpandString(ctx, input)
 
 	if err != nil {
 		t.Error(err)
@@ -57,8 +58,8 @@ func TestSimpleExpand(t *testing.T) {
 
 func TestExpandNestedCommas(t *testing.T) {
 	input := "DirectReports($select=FirstName,LastName;$levels=4)"
-
-	output, err := ParseExpandString(input)
+	ctx := context.Background()
+	output, err := ParseExpandString(ctx, input)
 
 	if err != nil {
 		t.Error(err)
@@ -91,8 +92,8 @@ func TestExpandNestedCommas(t *testing.T) {
 
 func TestExpandNestedParens(t *testing.T) {
 	input := "Products($filter=not (DiscontinuedDate eq null))"
-
-	output, err := ParseExpandString(input)
+	ctx := context.Background()
+	output, err := ParseExpandString(ctx, input)
 
 	if err != nil {
 		t.Error(err)

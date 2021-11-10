@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"strings"
 )
 
@@ -15,7 +16,7 @@ type OrderByItem struct {
 	Order string            // Ascending or descending order.
 }
 
-func ParseOrderByString(orderby string) (*GoDataOrderByQuery, error) {
+func ParseOrderByString(ctx context.Context, orderby string) (*GoDataOrderByQuery, error) {
 	return GlobalExpressionParser.ParseOrderByString(orderby)
 }
 

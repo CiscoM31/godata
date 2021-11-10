@@ -1,6 +1,7 @@
 package godata
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -142,8 +143,8 @@ func BuildService(provider GoDataProvider, serviceUrl string) (*GoDataService, e
 // The default handler for parsing requests as GoDataRequests, passing them
 // to a GoData provider, and then building a response.
 func (service *GoDataService) GoDataHTTPHandler(w http.ResponseWriter, r *http.Request) {
-
-	request, err := ParseRequest(r.URL.Path, r.URL.Query(), false)
+	ctx := context.Background()
+	request, err := ParseRequest(ctx, r.URL.Path, r.URL.Query(), false)
 
 	if err != nil {
 		panic(err) // TODO: return proper error
@@ -151,7 +152,7 @@ func (service *GoDataService) GoDataHTTPHandler(w http.ResponseWriter, r *http.R
 
 	// Semanticize all tokens in the request, connecting them with their
 	// corresponding types in the service
-	err = SemanticizeRequest(request, service)
+	err = request.SemanticizeRequest(service)
 
 	if err != nil {
 		panic(err) // TODO: return proper error
