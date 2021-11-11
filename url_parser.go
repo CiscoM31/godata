@@ -230,11 +230,11 @@ type OdataComplianceConfig int
 
 const (
 	ComplianceStrict OdataComplianceConfig = 0
-	// Ingore duplicate ODATA keywords in the URL query.
+	// Ignore duplicate ODATA keywords in the URL query.
 	ComplianceIgnoreDuplicateKeywords OdataComplianceConfig = 1 << iota
 	// Ignore unknown ODATA keywords in the URL query.
 	ComplianceIgnoreUnknownKeywords
-	// Ingore extraneous comma as the last character in a list of function arguments.
+	// Ignore extraneous comma as the last character in a list of function arguments.
 	ComplianceIgnoreInvalidComma
 	ComplianceIgnoreAll OdataComplianceConfig = ComplianceIgnoreDuplicateKeywords |
 		ComplianceIgnoreUnknownKeywords |
