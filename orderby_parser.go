@@ -16,15 +16,11 @@ type OrderByItem struct {
 	Order string            // Ascending or descending order.
 }
 
-func ParseOrderByString(ctx context.Context, orderby string) (*GoDataOrderByQuery, error) {
-	return GlobalExpressionParser.ParseOrderByString(ctx, orderby)
-}
-
 // The value of the $orderby System Query option contains a comma-separated
 // list of expressions whose primitive result values are used to sort the items.
 // The service MUST order by the specified property in ascending order.
 // 4.01 services MUST support case-insensitive values for asc and desc.
-func (p *ExpressionParser) ParseOrderByString(ctx context.Context, orderby string) (*GoDataOrderByQuery, error) {
+func ParseOrderByString(ctx context.Context, orderby string) (*GoDataOrderByQuery, error) {
 	items := strings.Split(orderby, ",")
 
 	result := make([]*OrderByItem, 0)
@@ -45,7 +41,7 @@ func (p *ExpressionParser) ParseOrderByString(ctx context.Context, orderby strin
 			v = strings.TrimSpace(v)
 		}
 
-		if tree, err := p.ParseExpressionString(ctx, v); err != nil {
+		if tree, err := GlobalExpressionParser.ParseExpressionString(ctx, v); err != nil {
 			switch e := err.(type) {
 			case *GoDataError:
 				return nil, &GoDataError{

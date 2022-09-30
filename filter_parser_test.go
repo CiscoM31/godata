@@ -550,7 +550,7 @@ func TestFilterInOperator(t *testing.T) {
 		t.Error(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	postfix, err = GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 	}
@@ -567,7 +567,7 @@ func TestFilterInOperator(t *testing.T) {
 		t.Error(err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -609,7 +609,7 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 		t.Error(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	postfix, err = GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 	}
@@ -624,7 +624,7 @@ func TestFilterInOperatorSingleValue(t *testing.T) {
 		t.Error(err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Error(err)
 	}
@@ -663,7 +663,7 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 		t.Fatal(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	postfix, err = GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -677,7 +677,7 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,7 +696,9 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 
 // TestFilterInOperatorBothSides tests the "IN" operator.
 // Use a listExpr on both sides of the IN operator.
-//   listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
+//
+//	listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
+//
 // Validate if a list is within another list.
 func TestFilterInOperatorBothSides(t *testing.T) {
 	ctx := context.Background()
@@ -742,7 +744,7 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 		t.Fatal(err)
 	}
 	var postfix *tokenQueue
-	postfix, err = GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	postfix, err = GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Fatalf("failed to convert from infix to postfix: %v", err)
 	}
@@ -776,7 +778,7 @@ func TestFilterInOperatorBothSides(t *testing.T) {
 		t.Fatalf("Unexpected postfix notation: %v. Error: %v", postfix, err)
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, postfix)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, postfix)
 	if err != nil {
 		t.Fatalf("Failed to convert postfix to tree: %v", err)
 	}
@@ -895,13 +897,13 @@ func TestFilterNotInListExpr(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+		output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+		tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1016,12 +1018,12 @@ func TestFilterFunction(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+		output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+		tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1083,12 +1085,12 @@ func TestFilterNestedFunction(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+		output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+		tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1386,12 +1388,12 @@ func TestFilterIn(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+		output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+		tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1500,14 +1502,14 @@ func TestFilterParserTree(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 
 	if err != nil {
 		t.Error(err)
@@ -1531,13 +1533,13 @@ func TestFilterNestedPath(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1565,13 +1567,13 @@ func TestFilterMultipleNestedPath(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1603,12 +1605,12 @@ func TestFilterSubstringFunction(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+		output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+		tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1633,12 +1635,12 @@ func TestFilterSubstringFunction(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+		output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+		tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 		if err != nil {
 			t.Error(err)
 			return
@@ -1684,7 +1686,7 @@ func TestFilterSubstringofFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1703,7 +1705,7 @@ func TestFilterSubstringofFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1756,7 +1758,7 @@ func TestFilterSubstringNestedFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1780,7 +1782,7 @@ func TestFilterSubstringNestedFunction(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1810,12 +1812,12 @@ func TestFilterGeoFunctions(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1840,12 +1842,12 @@ func TestFilterLambdaAny(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1878,7 +1880,7 @@ func TestFilterLambdaAnyNot(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1900,7 +1902,7 @@ func TestFilterLambdaAnyNot(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -1930,12 +1932,12 @@ func TestFilterLambdaAnyAnd(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2008,12 +2010,12 @@ func TestFilterLambdaAnyNestedProperties(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2047,13 +2049,13 @@ func TestFilterLambda2(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return
@@ -2094,13 +2096,13 @@ func TestFilterLambda3(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
+	output, err := GlobalExpressionParser.InfixToPostfix(ctx, tokens)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
+	tree, err := GlobalExpressionParser.PostfixToTree(ctx, output)
 	if err != nil {
 		t.Error(err)
 		return

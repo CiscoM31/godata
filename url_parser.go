@@ -300,12 +300,6 @@ func (req *GoDataRequest) ParseUrlQuery(ctx context.Context, query url.Values) e
 	if err != nil {
 		return err
 	}
-	if at != "" {
-		result.At, err = ParseFilterString(ctx, at)
-	}
-	if err != nil {
-		return err
-	}
 	if apply != "" {
 		result.Apply, err = ParseApplyString(ctx, apply)
 	}
