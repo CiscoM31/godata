@@ -315,7 +315,7 @@ func NewExpressionParser() *ExpressionParser {
 	//   Edm.Boolean geo.intersects(Edm.GeometryPoint,Edm.GeometryPolygon)
 	// The geo.intersects function returns true if the specified point lies within the interior
 	// or on the boundary of the specified polygon, otherwise it returns false.
-	parser.DefineFunction("geo.intersects", []int{2}, false)
+	parser.DefineFunction("geo.intersects", []int{2}, true)
 	// The geo.length function has the following signatures:
 	//   Edm.Double geo.length(Edm.GeographyLineString)
 	//   Edm.Double geo.length(Edm.GeometryLineString)
@@ -329,7 +329,7 @@ func NewExpressionParser() *ExpressionParser {
 	parser.DefineFunction("all", []int{2}, true)
 	// Define 'case' as a function accepting 1-10 arguments. Each argument is a pair of expressions separated by a colon.
 	// See https://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html#sec_case
-	parser.DefineFunction("case", []int{1,2,3,4,5,6,7,8,9,10}, true)
+	parser.DefineFunction("case", []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, true)
 
 	return parser
 }

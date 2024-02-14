@@ -241,8 +241,6 @@ func TestInvalidBooleanExpressionSyntax(t *testing.T) {
 		// Geo functions
 		"geo.distance(CurrentPosition,TargetPosition)",
 		"geo.length(DirectRoute)",
-		"geo.intersects(Position,TargetArea)",
-		"GEO.INTERSECTS(Position,TargetArea)", // functions are case insensitive in ODATA 4.0.1
 		"now()",
 		"tolower(Name)",
 		"concat(First,Last)",

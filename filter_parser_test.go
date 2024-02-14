@@ -696,7 +696,9 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 
 // TestFilterInOperatorBothSides tests the "IN" operator.
 // Use a listExpr on both sides of the IN operator.
-//   listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
+//
+//	listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
+//
 // Validate if a list is within another list.
 func TestFilterInOperatorBothSides(t *testing.T) {
 	ctx := context.Background()
@@ -1178,13 +1180,12 @@ func TestValidFilterSyntax(t *testing.T) {
 		// Type functions
 		"isof(ShipCountry,Edm.String)",
 		"isof(NorthwindModel.BigOrder)",
-		"cast(ShipCountry,Edm.String)",
 		// Parameter aliases
 		// See http://docs.oasis-open.org/odata/odata/v4.0/errata03/os/complete/part1-protocol/odata-v4.0-errata03-os-part1-protocol-complete.html#_Toc453752288
 		"Region eq @p1", // Aliases start with @
 		// Geo functions
-		"geo.distance(CurrentPosition,TargetPosition)",
-		"geo.length(DirectRoute)",
+		"geo.distance(CurrentPosition,TargetPosition) gt 32.1",
+		"geo.length(DirectRoute) eq 32.1",
 		"geo.intersects(Position,TargetArea)",
 		"GEO.INTERSECTS(Position,TargetArea)", // functions are case insensitive in ODATA 4.0.1
 		// Logical operators
@@ -1312,23 +1313,23 @@ func TestInvalidFilterSyntax(t *testing.T) {
 		"not (City eq 'Dallas'))",              // Extraneous closing parenthesis
 		"not City eq 'Dallas')",                // Missing open parenthesis
 		"City eq 'Dallas' orCity eq 'Houston'", // missing space between or and City
-		// TODO: the query below should fail.
-		//"Tags/any(var:var/Key eq 'Site') orTags/any(var:var/Key eq 'Site')",
+		"Tags/any(var:var/Key eq 'Site') orTags/any(var:var/Key eq 'Site')",
 		"not (City eq 'Dallas') and Name eq 'Houston')",
-		"Tags/all()",                   // The all operator cannot be used without an argument expression.
-		"LastName contains 'Smith'",    // Previously the godata library was not returning an error.
-		"contains",                     // Function with missing parenthesis and arguments
-		"contains()",                   // Function with missing arguments
-		"contains LastName, 'Smith'",   // Missing parenthesis
-		"contains(LastName)",           // Insufficent number of function arguments
-		"contains(LastName, 'Smith'))", // Extraneous closing parenthesis
-		"contains(LastName, 'Smith'",   // Missing closing parenthesis
-		"contains LastName, 'Smith')",  // Missing open parenthesis
-		"City eq 'Dallas' 'Houston'",   // extraneous string value
-		"(numCore neq 12)",             // Invalid operator. It should be 'ne'
-		"(a b c d)",                    // Invalid list
-		"numCore neq 12",               // Invalid operator. It should be 'ne'
-		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
+		"Tags/all()",                         // The all operator cannot be used without an argument expression.
+		"LastName contains 'Smith'",          // Previously the godata library was not returning an error.
+		"contains",                           // Function with missing parenthesis and arguments
+		"contains()",                         // Function with missing arguments
+		"contains LastName, 'Smith'",         // Missing parenthesis
+		"contains(LastName)",                 // Insufficent number of function arguments
+		"contains(LastName, 'Smith'))",       // Extraneous closing parenthesis
+		"contains(LastName, 'Smith'",         // Missing closing parenthesis
+		"contains LastName, 'Smith')",        // Missing open parenthesis
+		"City eq 'Dallas' 'Houston'",         // extraneous string value
+		"(numCore neq 12)",                   // Invalid operator. It should be 'ne'
+		"(a b c d)",                          // Invalid list
+		"numCore neq 12",                     // Invalid operator. It should be 'ne'
+		"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
+		"length('Doe')",                      // non-boolean return value
 	}
 	ctx := context.Background()
 	for _, input := range queries {
