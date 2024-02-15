@@ -67,6 +67,30 @@ var testCases = []struct {
 		},
 	},
 	{
+		expression: "A/B mul 2 gt 50",
+		tree: []expectedParseNode{
+			{Value: "gt", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "mul", Depth: 1, Type: ExpressionTokenOp},
+			{Value: "/", Depth: 2, Type: ExpressionTokenNav},
+			{Value: "A", Depth: 3, Type: ExpressionTokenLiteral},
+			{Value: "B", Depth: 3, Type: ExpressionTokenLiteral},
+			{Value: "2", Depth: 2, Type: ExpressionTokenInteger},
+			{Value: "50", Depth: 1, Type: ExpressionTokenInteger},
+		},
+	},
+	{
+		expression: "(A/B) mul 2 gt 50",
+		tree: []expectedParseNode{
+			{Value: "gt", Depth: 0, Type: ExpressionTokenLogical},
+			{Value: "mul", Depth: 1, Type: ExpressionTokenOp},
+			{Value: "/", Depth: 2, Type: ExpressionTokenNav},
+			{Value: "A", Depth: 3, Type: ExpressionTokenLiteral},
+			{Value: "B", Depth: 3, Type: ExpressionTokenLiteral},
+			{Value: "2", Depth: 2, Type: ExpressionTokenInteger},
+			{Value: "50", Depth: 1, Type: ExpressionTokenInteger},
+		},
+	},
+	{
 		expression: "Address/City eq 'Redmond'",
 		tree: []expectedParseNode{
 			{Value: "eq", Depth: 0, Type: ExpressionTokenLogical},
