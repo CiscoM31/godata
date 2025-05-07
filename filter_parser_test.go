@@ -2,6 +2,7 @@ package godata
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -133,25 +134,18 @@ func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
 	}
 }
 
-// geographyPolygon   = geographyPrefix SQUOTE fullPolygonLiteral SQUOTE
-// geographyPrefix = "geography"
-// fullPolygonLiteral = sridLiteral polygonLiteral
-// sridLiteral      = "SRID" EQ 1*5DIGIT SEMI
-// polygonLiteral     = "Polygon" polygonData
-// polygonData        = OPEN ringLiteral *( COMMA ringLiteral ) CLOSE
-// positionLiteral  = doubleValue SP doubleValue  ; longitude, then latitude
-/*
-func TestFilterGeographyPolygon(t *testing.T) {
-	input := "geo.intersects(location, geography'SRID=0;Polygon(-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581)')"
-	q, err := ParseFilterString(input)
+func TestFilterGeoIntersects(t *testing.T) {
+
+	input := "geo.intersects(location, geography'Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))')"
+	q, err := ParseFilterString(context.Background(), input)
 	if err != nil {
 		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
 		return
 	}
-	var expect []expectedParseNode = []expectedParseNode{
-		{Value:"geo.intersects", Depth:0, Type: 0},
-		{Value:"location", Depth:1, Type: 0},
-		{Value:"geography'SRID=0;Polygon(-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581)'", Depth:1, Type: 0},
+	var expect = []expectedParseNode{
+		{Value: "geo.intersects", Depth: 0, Type: ExpressionTokenFunc},
+		{Value: "location", Depth: 1, Type: ExpressionTokenLiteral},
+		{Value: "-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581", Depth: 1, Type: ExpressionTokenGeographyPolygon},
 	}
 	pos := 0
 	err = CompareTree(q.Tree, expect, &pos, 0)
@@ -159,8 +153,54 @@ func TestFilterGeographyPolygon(t *testing.T) {
 		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
 		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
 	}
+
+	// test optional SRID, ignored by parsing
+	input = "geo.intersects(location, geography'SRID=123;Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))')"
+	q, err = ParseFilterString(context.Background(), input)
+	if err != nil {
+		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		return
+	}
+
+	// expect same response as first query without SRID
+	pos = 0
+	err = CompareTree(q.Tree, expect, &pos, 0)
+	if err != nil {
+		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
+		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+	}
+
+	// test Edm.GeometryPolygon
+	input = "geo.intersects(location, geometry'Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))')"
+	q, err = ParseFilterString(context.Background(), input)
+	if err != nil {
+		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		return
+	}
+
+	expect[2].Type = ExpressionTokenGeometryPolygon
+	pos = 0
+	err = CompareTree(q.Tree, expect, &pos, 0)
+	if err != nil {
+		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
+		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+	}
+
+	input = "geo.intersects(location, geometry'SRID=123;Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))')"
+	q, err = ParseFilterString(context.Background(), input)
+	if err != nil {
+		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		return
+	}
+
+	expect[2].Type = ExpressionTokenGeometryPolygon
+	pos = 0
+	err = CompareTree(q.Tree, expect, &pos, 0)
+	if err != nil {
+		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
+		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+	}
 }
-*/
 
 // TestFilterAnyGeography matches documents where any of the geo coordinates in the locations field is within the given polygon.
 /*
@@ -696,7 +736,9 @@ func TestFilterInOperatorEmptyList(t *testing.T) {
 
 // TestFilterInOperatorBothSides tests the "IN" operator.
 // Use a listExpr on both sides of the IN operator.
-//   listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
+//
+//	listExpr  = OPEN BWS commonExpr BWS *( COMMA BWS commonExpr BWS ) CLOSE
+//
 // Validate if a list is within another list.
 func TestFilterInOperatorBothSides(t *testing.T) {
 	ctx := context.Background()
@@ -1178,13 +1220,12 @@ func TestValidFilterSyntax(t *testing.T) {
 		// Type functions
 		"isof(ShipCountry,Edm.String)",
 		"isof(NorthwindModel.BigOrder)",
-		"cast(ShipCountry,Edm.String)",
 		// Parameter aliases
 		// See http://docs.oasis-open.org/odata/odata/v4.0/errata03/os/complete/part1-protocol/odata-v4.0-errata03-os-part1-protocol-complete.html#_Toc453752288
 		"Region eq @p1", // Aliases start with @
 		// Geo functions
-		"geo.distance(CurrentPosition,TargetPosition)",
-		"geo.length(DirectRoute)",
+		"geo.distance(CurrentPosition,TargetPosition) gt 5",
+		"geo.length(DirectRoute) lt 22",
 		"geo.intersects(Position,TargetArea)",
 		"GEO.INTERSECTS(Position,TargetArea)", // functions are case insensitive in ODATA 4.0.1
 		// Logical operators
@@ -1315,20 +1356,23 @@ func TestInvalidFilterSyntax(t *testing.T) {
 		// TODO: the query below should fail.
 		//"Tags/any(var:var/Key eq 'Site') orTags/any(var:var/Key eq 'Site')",
 		"not (City eq 'Dallas') and Name eq 'Houston')",
-		"Tags/all()",                   // The all operator cannot be used without an argument expression.
-		"LastName contains 'Smith'",    // Previously the godata library was not returning an error.
-		"contains",                     // Function with missing parenthesis and arguments
-		"contains()",                   // Function with missing arguments
-		"contains LastName, 'Smith'",   // Missing parenthesis
-		"contains(LastName)",           // Insufficent number of function arguments
-		"contains(LastName, 'Smith'))", // Extraneous closing parenthesis
-		"contains(LastName, 'Smith'",   // Missing closing parenthesis
-		"contains LastName, 'Smith')",  // Missing open parenthesis
-		"City eq 'Dallas' 'Houston'",   // extraneous string value
-		"(numCore neq 12)",             // Invalid operator. It should be 'ne'
-		"(a b c d)",                    // Invalid list
-		"numCore neq 12",               // Invalid operator. It should be 'ne'
-		//"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
+		"Tags/all()",                         // The all operator cannot be used without an argument expression.
+		"LastName contains 'Smith'",          // Previously the godata library was not returning an error.
+		"contains",                           // Function with missing parenthesis and arguments
+		"contains()",                         // Function with missing arguments
+		"contains LastName, 'Smith'",         // Missing parenthesis
+		"contains(LastName)",                 // Insufficent number of function arguments
+		"contains(LastName, 'Smith'))",       // Extraneous closing parenthesis
+		"contains(LastName, 'Smith'",         // Missing closing parenthesis
+		"contains LastName, 'Smith')",        // Missing open parenthesis
+		"City eq 'Dallas' 'Houston'",         // extraneous string value
+		"(numCore neq 12)",                   // Invalid operator. It should be 'ne'
+		"(a b c d)",                          // Invalid list
+		"numCore neq 12",                     // Invalid operator. It should be 'ne'
+		"contains(Name, 'a', 'b', 'c', 'd')", // Too many function arguments
+		"cast(ShipCountry,Edm.String)",
+		"geo.distance(CurrentPosition,TargetPosition)",
+		"geo.length(DirectRoute)",
 	}
 	ctx := context.Background()
 	for _, input := range queries {
@@ -1801,34 +1845,90 @@ func TestFilterSubstringNestedFunction(t *testing.T) {
 		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
-func TestFilterGeoFunctions(t *testing.T) {
-	ctx := context.Background()
-	// Previously, the parser was incorrectly interpreting the 'geo.xxx' functions as the 'ge' operator.
-	input := "geo.distance(CurrentPosition,TargetPosition)"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
+func TestGeoDistance(t *testing.T) {
+
+	input := "geo.distance(location,geography'POINT(-122.13 47.67)') lt 5"
+	q, err := ParseFilterString(context.Background(), input)
 	if err != nil {
-		t.Error(err)
+		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	var expect []expectedParseNode = []expectedParseNode{
-		{Value: "geo.distance", Depth: 0, Type: ExpressionTokenFunc},
-		{Value: "CurrentPosition", Depth: 1, Type: ExpressionTokenLiteral},
-		{Value: "TargetPosition", Depth: 1, Type: ExpressionTokenLiteral},
+	var expect = []expectedParseNode{
+		{Value: "lt", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "geo.distance", Depth: 1, Type: ExpressionTokenFunc},
+		{Value: "location", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "-122.13 47.67", Depth: 2, Type: ExpressionTokenGeographyPoint},
+		{Value: "5", Depth: 1, Type: ExpressionTokenInteger},
 	}
 	pos := 0
-	err = CompareTree(tree, expect, &pos, 0)
+	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
+		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
+		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+	}
+
+	input = "geo.distance(location,geography'POINT(-122.13 47)') lt 5"
+	q, err = ParseFilterString(context.Background(), input)
+	if err != nil {
+		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		return
+	}
+	expect = []expectedParseNode{
+		{Value: "lt", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "geo.distance", Depth: 1, Type: ExpressionTokenFunc},
+		{Value: "location", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "-122.13 47", Depth: 2, Type: ExpressionTokenGeographyPoint},
+		{Value: "5", Depth: 1, Type: ExpressionTokenInteger},
+	}
+	pos = 0
+	err = CompareTree(q.Tree, expect, &pos, 0)
+	if err != nil {
+		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
+		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+	}
+
+	// negative tests
+
+	// geo.distance function with too few arguments, needs 2
+	input = "geo.distance(location) lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid number of arguments for function") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// geo.distance function with too many arguments, needs 2
+	input = "geo.distance(location,geography'POINT(1,2)', extra) lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// POINT with too few coordinates, needs 2
+	input = "geo.distance(location,geography'POINT()') lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// POINT with too few coordinates, needs 2
+	input = "geo.distance(location,geography'POINT(1)') lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// POINT with too many coordinates, needs 2
+	input = "geo.distance(location,geography'POINT(1,2,3)') lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// geo.distance must be followed by a comparison operator
+	input = "geo.distance(location,geography'POINT(-122.13 47.67)')"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "Value must be a boolean expression") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
 	}
 }
 

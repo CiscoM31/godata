@@ -174,7 +174,7 @@ var testCases = []struct {
 	},
 	{
 		// matches documents where any of the geo coordinates in the locations field is within the given polygon.
-		expression: "locations/any(loc: geo.intersects(loc, geography'SRID=0;Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))'))",
+		expression: "locations/any(loc: geo.intersects(loc, geography'Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))'))",
 		infixTokens: []*Token{
 			{Value: "locations", Type: ExpressionTokenLiteral},
 			{Value: "/", Type: ExpressionTokenLambdaNav},
@@ -186,7 +186,7 @@ var testCases = []struct {
 			{Value: "(", Type: ExpressionTokenOpenParen},
 			{Value: "loc", Type: ExpressionTokenLiteral},
 			{Value: ",", Type: ExpressionTokenComma},
-			{Value: "geography'SRID=0;Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))'", Type: ExpressionTokenGeographyPolygon},
+			{Value: "-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581", Type: ExpressionTokenGeographyPolygon},
 			{Value: ")", Type: ExpressionTokenCloseParen},
 			{Value: ")", Type: ExpressionTokenCloseParen},
 		},
@@ -198,7 +198,7 @@ var testCases = []struct {
 			{Value: "loc", Depth: 2, Type: ExpressionTokenLiteral},
 			{Value: "geo.intersects", Depth: 2, Type: ExpressionTokenFunc},
 			{Value: "loc", Depth: 3, Type: ExpressionTokenLiteral},
-			{Value: "geography'SRID=0;Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))'", Depth: 3, Type: ExpressionTokenGeographyPolygon},
+			{Value: "-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581", Depth: 3, Type: ExpressionTokenGeographyPolygon},
 		},
 	},
 	{
@@ -209,11 +209,11 @@ var testCases = []struct {
 		// polygonLiteral     = "Polygon" polygonData
 		// polygonData        = OPEN ringLiteral *( COMMA ringLiteral ) CLOSE
 		// positionLiteral  = doubleValue SP doubleValue  ; longitude, then latitude
-		expression: "geo.intersects(location, geometry'SRID=123;Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))')",
+		expression: "geo.intersects(location, geometry'Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))')",
 		tree: []expectedParseNode{
 			{Value: "geo.intersects", Depth: 0, Type: ExpressionTokenFunc},
 			{Value: "location", Depth: 1, Type: ExpressionTokenLiteral},
-			{Value: "geometry'SRID=123;Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))'", Depth: 1, Type: ExpressionTokenGeometryPolygon},
+			{Value: "-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581", Depth: 1, Type: ExpressionTokenGeometryPolygon},
 		},
 	},
 	{
