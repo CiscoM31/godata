@@ -134,7 +134,7 @@ func TestFilterAnyArrayOfPrimitiveTypes(t *testing.T) {
 	}
 }
 
-func TestFilterGeoPolygon(t *testing.T) {
+func TestFilterGeoIntersects(t *testing.T) {
 
 	input := "geo.intersects(location, geography'Polygon((-122.031577 47.578581, -122.031577 47.678581, -122.131577 47.678581, -122.031577 47.578581))')"
 	q, err := ParseFilterString(context.Background(), input)
@@ -1156,27 +1156,6 @@ func TestFilterNestedFunction(t *testing.T) {
 	}
 }
 
-func TestGeo(t *testing.T) {
-
-	//q, err := ParseFilterString(context.Background(), "geo.distance(Foo,Bar) lt 5")
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//t.Log(q)
-
-	q, err := ParseFilterString(context.Background(), "geo.distance(Foo,geography'POINT(-122.131577 47.678581)') lt 5")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(q)
-
-	q, err = ParseFilterString(context.Background(), `geo.intersects(Foo,geography'POLYGON(( -122.34 47.65, -122.34 47.60, -122.30 47.60, -122.30 47.65, -122.34 47.65 ))')`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(q)
-}
-
 func TestValidFilterSyntax(t *testing.T) {
 	queries := []string{
 		"substring(CompanyName,1,2) eq 'lf'", // substring with 3 arguments.
@@ -1866,34 +1845,90 @@ func TestFilterSubstringNestedFunction(t *testing.T) {
 		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
 	}
 }
-func TestFilterGeoFunctions(t *testing.T) {
-	ctx := context.Background()
-	// Previously, the parser was incorrectly interpreting the 'geo.xxx' functions as the 'ge' operator.
-	input := "geo.distance(CurrentPosition,TargetPosition)"
-	tokens, err := GlobalExpressionTokenizer.Tokenize(ctx, input)
+func TestGeoDistance(t *testing.T) {
+
+	input := "geo.distance(location,geography'POINT(-122.13 47.67)') lt 5"
+	q, err := ParseFilterString(context.Background(), input)
 	if err != nil {
-		t.Error(err)
+		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
 		return
 	}
-	output, err := GlobalFilterParser.InfixToPostfix(ctx, tokens)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	tree, err := GlobalFilterParser.PostfixToTree(ctx, output)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	var expect []expectedParseNode = []expectedParseNode{
-		{Value: "geo.distance", Depth: 0, Type: ExpressionTokenFunc},
-		{Value: "CurrentPosition", Depth: 1, Type: ExpressionTokenLiteral},
-		{Value: "TargetPosition", Depth: 1, Type: ExpressionTokenLiteral},
+	var expect = []expectedParseNode{
+		{Value: "lt", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "geo.distance", Depth: 1, Type: ExpressionTokenFunc},
+		{Value: "location", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "-122.13 47.67", Depth: 2, Type: ExpressionTokenGeographyPoint},
+		{Value: "5", Depth: 1, Type: ExpressionTokenInteger},
 	}
 	pos := 0
-	err = CompareTree(tree, expect, &pos, 0)
+	err = CompareTree(q.Tree, expect, &pos, 0)
 	if err != nil {
-		t.Errorf("Tree representation does not match expected value. error: %v. Tree:\n%v", err, tree)
+		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
+		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+	}
+
+	input = "geo.distance(location,geography'POINT(-122.13 47)') lt 5"
+	q, err = ParseFilterString(context.Background(), input)
+	if err != nil {
+		t.Errorf("Error parsing query %s. Error: %s", input, err.Error())
+		return
+	}
+	expect = []expectedParseNode{
+		{Value: "lt", Depth: 0, Type: ExpressionTokenLogical},
+		{Value: "geo.distance", Depth: 1, Type: ExpressionTokenFunc},
+		{Value: "location", Depth: 2, Type: ExpressionTokenLiteral},
+		{Value: "-122.13 47", Depth: 2, Type: ExpressionTokenGeographyPoint},
+		{Value: "5", Depth: 1, Type: ExpressionTokenInteger},
+	}
+	pos = 0
+	err = CompareTree(q.Tree, expect, &pos, 0)
+	if err != nil {
+		fmt.Printf("Got tree:\n%v\n", q.Tree.String())
+		t.Errorf("Tree representation does not match expected value. error: %s", err.Error())
+	}
+
+	// negative tests
+
+	// geo.distance function with too few arguments, needs 2
+	input = "geo.distance(location) lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid number of arguments for function") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// geo.distance function with too many arguments, needs 2
+	input = "geo.distance(location,geography'POINT(1,2)', extra) lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// POINT with too few coordinates, needs 2
+	input = "geo.distance(location,geography'POINT()') lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// POINT with too few coordinates, needs 2
+	input = "geo.distance(location,geography'POINT(1)') lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// POINT with too many coordinates, needs 2
+	input = "geo.distance(location,geography'POINT(1,2,3)') lt 5"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "invalid token sequence") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
+	}
+
+	// geo.distance must be followed by a comparison operator
+	input = "geo.distance(location,geography'POINT(-122.13 47.67)')"
+	_, err = ParseFilterString(context.Background(), input)
+	if err == nil || !strings.Contains(err.Error(), "Value must be a boolean expression") {
+		t.Errorf("parsing should fail for bad query, got ==> %v", err)
 	}
 }
 
