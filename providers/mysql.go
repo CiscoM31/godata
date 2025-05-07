@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	. "github.com/CiscoM31/godata"
+	"github.com/CiscoM31/godata"
 	//"database/sql"
 	//"errors"
 	//"github.com/go-sql-driver/mysql"
@@ -89,9 +89,9 @@ type MySQLGoDataProvider struct {
 	Namespace        string
 	Entities         map[string]*MySQLGoDataEntity
 	EntitySets       map[string]*MySQLGoDataEntitySet
-	Actions          map[string]*GoDataAction
-	Functions        map[string]*GoDataFunction
-	Metadata         *GoDataMetadata
+	Actions          map[string]*godata.GoDataAction
+	Functions        map[string]*godata.GoDataFunction
+	Metadata         *godata.GoDataMetadata
 }
 
 type MySQLGoDataEntity struct {
@@ -99,12 +99,12 @@ type MySQLGoDataEntity struct {
 	KeyType    string
 	PropColMap map[string]string
 	ColPropMap map[string]string
-	EntityType *GoDataEntityType
+	EntityType *godata.GoDataEntityType
 }
 
 type MySQLGoDataEntitySet struct {
 	Entity    *MySQLGoDataEntity
-	EntitySet *GoDataEntitySet
+	EntitySet *godata.GoDataEntitySet
 }
 
 // Build an empty MySQL provider. Provide the connection parameters and the
@@ -117,7 +117,7 @@ func BuildMySQLProvider(cxnParams *MySQLConnectionParams, namespace string) *MyS
 	}
 }
 
-func (p *MySQLGoDataProvider) BuildQuery(r *GoDataRequest) (string, error) {
+func (p *MySQLGoDataProvider) BuildQuery(r *godata.GoDataRequest) (string, error) {
 	/*
 		setName := r.FirstSegment.Name
 		entitySet := p.EntitySets[setName]
@@ -141,24 +141,24 @@ func (p *MySQLGoDataProvider) BuildQuery(r *GoDataRequest) (string, error) {
 		query = append(query, selectClause)
 		params = append(params, selectParams)
 	*/
-	return "", NotImplementedError("not implemented")
+	return "", godata.NotImplementedError("not implemented")
 }
 
 // Build the select clause to begin the query, and also return the values to
 // send to a prepared statement.
-func (p *MySQLGoDataProvider) BuildSelectClause(r *GoDataRequest) ([]byte, []string, error) {
-	return nil, nil, NotImplementedError("not implemented")
+func (p *MySQLGoDataProvider) BuildSelectClause(r *godata.GoDataRequest) ([]byte, []string, error) {
+	return nil, nil, godata.NotImplementedError("not implemented")
 }
 
 // Build the from clause in the query, and also return the values to send to
 // the prepared statement.
-func (p *MySQLGoDataProvider) BuildFromClause(r *GoDataRequest) ([]byte, []string, error) {
-	return nil, nil, NotImplementedError("not implemented")
+func (p *MySQLGoDataProvider) BuildFromClause(r *godata.GoDataRequest) ([]byte, []string, error) {
+	return nil, nil, godata.NotImplementedError("not implemented")
 }
 
 // Build a where clause that can be appended to an SQL query, and also return
 // the values to send to a prepared statement.
-func (p *MySQLGoDataProvider) BuildWhereClause(r *GoDataRequest) ([]byte, []string, error) {
+func (p *MySQLGoDataProvider) BuildWhereClause(r *godata.GoDataRequest) ([]byte, []string, error) {
 	/*
 		// Builds the WHERE clause recursively using DFS
 		recursiveBuildWhere := func(n *ParseNode) ([]byte, []string, error) {
@@ -189,42 +189,42 @@ func (p *MySQLGoDataProvider) BuildWhereClause(r *GoDataRequest) ([]byte, []stri
 			}
 		}
 	*/
-	return nil, nil, NotImplementedError("not implemented")
+	return nil, nil, godata.NotImplementedError("not implemented")
 }
 
 // Respond to a GoDataRequest using the MySQL provider.
-func (p *MySQLGoDataProvider) Response(r *GoDataRequest) *GoDataResponse {
+func (p *MySQLGoDataProvider) Response(r *godata.GoDataRequest) *godata.GoDataResponse {
 
 	return nil
 }
 
 // Build the $metadata file from the entities in the builder. It creates a
 // schema with the given namespace name.
-func (builder *MySQLGoDataProvider) BuildMetadata() *GoDataMetadata {
+func (builder *MySQLGoDataProvider) BuildMetadata() *godata.GoDataMetadata {
 	// convert maps to slices for the metadata
-	entitySets := make([]*GoDataEntitySet, len(builder.EntitySets))
+	entitySets := make([]*godata.GoDataEntitySet, len(builder.EntitySets))
 	for _, v := range builder.EntitySets {
 		entitySets = append(entitySets, v.EntitySet)
 	}
-	entityTypes := make([]*GoDataEntityType, len(builder.Entities))
+	entityTypes := make([]*godata.GoDataEntityType, len(builder.Entities))
 	for _, v := range builder.Entities {
 		entityTypes = append(entityTypes, v.EntityType)
 	}
 	// build the schema
-	container := GoDataEntityContainer{
+	container := godata.GoDataEntityContainer{
 		Name:       builder.ConnectionParams.Database,
 		EntitySets: entitySets,
 	}
-	schema := GoDataSchema{
+	schema := godata.GoDataSchema{
 		Namespace:        builder.Namespace,
 		EntityTypes:      entityTypes,
-		EntityContainers: []*GoDataEntityContainer{&container},
+		EntityContainers: []*godata.GoDataEntityContainer{&container},
 	}
-	services := GoDataServices{
-		Schemas: []*GoDataSchema{&schema},
+	services := godata.GoDataServices{
+		Schemas: []*godata.GoDataSchema{&schema},
 	}
 
-	root := GoDataMetadata{
+	root := godata.GoDataMetadata{
 		XMLNamespace: XMLNamespace,
 		Version:      ODataVersion,
 		DataServices: &services,
@@ -236,7 +236,7 @@ func (builder *MySQLGoDataProvider) BuildMetadata() *GoDataMetadata {
 // Expose a table in the MySQL database as an entity with the given name in the
 // OData service.
 func (builder *MySQLGoDataProvider) ExposeEntity(tblname, entityname string) *MySQLGoDataEntity {
-	entitytype := GoDataEntityType{Name: entityname}
+	entitytype := godata.GoDataEntityType{Name: entityname}
 	myentity := &MySQLGoDataEntity{tblname, "", map[string]string{}, map[string]string{}, &entitytype}
 	builder.Entities[entityname] = myentity
 	return myentity
@@ -244,7 +244,7 @@ func (builder *MySQLGoDataProvider) ExposeEntity(tblname, entityname string) *My
 
 // Expose a queryable collection of entities
 func (builder *MySQLGoDataProvider) ExposeEntitySet(entity *MySQLGoDataEntity, setname string) *MySQLGoDataEntitySet {
-	entityset := &GoDataEntitySet{Name: setname, EntityType: builder.Namespace + "." + entity.EntityType.Name}
+	entityset := &godata.GoDataEntitySet{Name: setname, EntityType: builder.Namespace + "." + entity.EntityType.Name}
 	myset := &MySQLGoDataEntitySet{entity, entityset}
 	builder.EntitySets[setname] = myset
 	return myset
@@ -255,9 +255,9 @@ func (builder *MySQLGoDataProvider) ExposeEntitySet(entity *MySQLGoDataEntity, s
 // property name must be provided for each entity. The columns must be foreign
 // keys corresponding to the primary key in the opposite table.
 func (builder *MySQLGoDataProvider) ExposeOneToOne(a, b *MySQLGoDataEntity, acol, bcol, aprop, bprop string) {
-	prop := GoDataNavigationProperty{Name: aprop, Type: builder.Namespace + "." + b.EntityType.Name, Partner: bprop}
+	prop := godata.GoDataNavigationProperty{Name: aprop, Type: builder.Namespace + "." + b.EntityType.Name, Partner: bprop}
 	a.EntityType.NavigationProperties = append(a.EntityType.NavigationProperties, &prop)
-	prop2 := GoDataNavigationProperty{Name: bprop, Type: builder.Namespace + "." + a.EntityType.Name, Partner: aprop}
+	prop2 := godata.GoDataNavigationProperty{Name: bprop, Type: builder.Namespace + "." + a.EntityType.Name, Partner: aprop}
 	b.EntityType.NavigationProperties = append(b.EntityType.NavigationProperties, &prop2)
 	a.PropColMap[aprop] = acol
 	a.ColPropMap[acol] = aprop
@@ -270,9 +270,9 @@ func (builder *MySQLGoDataProvider) ExposeOneToOne(a, b *MySQLGoDataEntity, acol
 // which will map to the key in entity b. A reverse property will be added to
 // entity b to map back to entity a, and does not need an explicit column.
 func (builder *MySQLGoDataProvider) ExposeManyToOne(a, b *MySQLGoDataEntity, acol, aprop, bprop string) {
-	prop := GoDataNavigationProperty{Name: aprop, Type: builder.Namespace + "." + b.EntityType.Name, Partner: bprop}
+	prop := godata.GoDataNavigationProperty{Name: aprop, Type: builder.Namespace + "." + b.EntityType.Name, Partner: bprop}
 	a.EntityType.NavigationProperties = append(a.EntityType.NavigationProperties, &prop)
-	prop2 := GoDataNavigationProperty{Name: bprop, Type: "Collection(" + builder.Namespace + "." + a.EntityType.Name + ")", Partner: aprop}
+	prop2 := godata.GoDataNavigationProperty{Name: bprop, Type: "Collection(" + builder.Namespace + "." + a.EntityType.Name + ")", Partner: aprop}
 	b.EntityType.NavigationProperties = append(b.EntityType.NavigationProperties, &prop2)
 	// the property name corresponding to the column in a will be given the same name
 	// as the key property in b so that it does not conflict with the property name
@@ -280,7 +280,7 @@ func (builder *MySQLGoDataProvider) ExposeManyToOne(a, b *MySQLGoDataEntity, aco
 	// in b that links back to this property in a.
 	constrainedProp := b.EntityType.Key.PropertyRef.Name
 	a.ExposeProperty(acol, constrainedProp, b.KeyType)
-	constraint := GoDataReferentialConstraint{Property: constrainedProp, ReferencedProperty: constrainedProp}
+	constraint := godata.GoDataReferentialConstraint{Property: constrainedProp, ReferencedProperty: constrainedProp}
 	prop2.ReferentialConstraints = append(prop2.ReferentialConstraints, &constraint)
 	a.PropColMap[aprop] = acol
 	a.ColPropMap[acol] = aprop
@@ -291,9 +291,9 @@ func (builder *MySQLGoDataProvider) ExposeManyToOne(a, b *MySQLGoDataEntity, aco
 // foreign key mappings to the primary keys in both a & b. Both entities will
 // be given a reference to each other with the given names in aprop & bprop.
 func (builder *MySQLGoDataProvider) ExposeManyToMany(a, b *MySQLGoDataEntity, tblname, aprop, bprop string) {
-	prop := GoDataNavigationProperty{Name: aprop, Type: "Collection(" + builder.Namespace + "." + b.EntityType.Name + ")", Partner: bprop}
+	prop := godata.GoDataNavigationProperty{Name: aprop, Type: "Collection(" + builder.Namespace + "." + b.EntityType.Name + ")", Partner: bprop}
 	a.EntityType.NavigationProperties = append(a.EntityType.NavigationProperties, &prop)
-	prop2 := GoDataNavigationProperty{Name: bprop, Type: "Collection(" + builder.Namespace + "." + a.EntityType.Name + ")", Partner: aprop}
+	prop2 := godata.GoDataNavigationProperty{Name: bprop, Type: "Collection(" + builder.Namespace + "." + a.EntityType.Name + ")", Partner: aprop}
 	b.EntityType.NavigationProperties = append(b.EntityType.NavigationProperties, &prop2)
 }
 
@@ -301,9 +301,9 @@ func (builder *MySQLGoDataProvider) ExposeManyToMany(a, b *MySQLGoDataEntity, tb
 // by a relationship. This SHOULD be done for any entity sets for whom their
 // entities contain a NavigationProperty.
 func (builder *MySQLGoDataProvider) BindProperty(a, b *MySQLGoDataEntitySet, apath, atarget, bpath, btarget string) {
-	bind := GoDataNavigationPropertyBinding{Path: apath, Target: atarget}
+	bind := godata.GoDataNavigationPropertyBinding{Path: apath, Target: atarget}
 	a.EntitySet.NavigationPropertyBindings = append(a.EntitySet.NavigationPropertyBindings, &bind)
-	bind2 := GoDataNavigationPropertyBinding{Path: bpath, Target: btarget}
+	bind2 := godata.GoDataNavigationPropertyBinding{Path: bpath, Target: btarget}
 	b.EntitySet.NavigationPropertyBindings = append(b.EntitySet.NavigationPropertyBindings, &bind2)
 }
 
@@ -312,7 +312,7 @@ func (builder *MySQLGoDataProvider) BindProperty(a, b *MySQLGoDataEntitySet, apa
 // database to map to the property name in the OData entity, and the OData
 // type.
 func (entity *MySQLGoDataEntity) ExposeKey(colname, propname, t string) {
-	entity.EntityType.Key = &GoDataKey{PropertyRef: &GoDataPropertyRef{Name: propname}}
+	entity.EntityType.Key = &godata.GoDataKey{PropertyRef: &godata.GoDataPropertyRef{Name: propname}}
 	entity.KeyType = t
 	entity.ExposePrimitive(colname, propname, t)
 }
@@ -326,7 +326,7 @@ func (entity *MySQLGoDataEntity) ExposePrimitive(colname, propname, t string) {
 // Expose an OData property on an entity. You must provide a
 // corresponding table column in the database.
 func (entity *MySQLGoDataEntity) ExposeProperty(colname, propname, t string) {
-	entity.EntityType.Properties = append(entity.EntityType.Properties, &GoDataProperty{Name: propname, Type: t})
+	entity.EntityType.Properties = append(entity.EntityType.Properties, &godata.GoDataProperty{Name: propname, Type: t})
 	entity.PropColMap[propname] = colname
 	entity.ColPropMap[colname] = propname
 }
